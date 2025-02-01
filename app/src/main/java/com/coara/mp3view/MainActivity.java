@@ -74,7 +74,7 @@ public class MainActivity extends AppCompatActivity {
     // ファイルピッカーを開く
     private void openFilePicker() {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        intent.setType("audio/mp3");
+        intent.setType("audio/*");  // すべての音声ファイルに対応
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         resultLauncher.launch(intent); // ActivityResultLauncher を使ってファイル選択
     }
