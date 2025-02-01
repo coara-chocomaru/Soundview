@@ -30,14 +30,16 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // WebViewの設定
         webView = findViewById(R.id.webView);
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setAllowFileAccess(true);
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient() {
+            // ファイル選択（audioファイル）を行う
             @Override
-            public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
+            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
                 MainActivity.this.filePathCallback = filePathCallback;
                 Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                 intent.addCategory(Intent.CATEGORY_OPENABLE);
@@ -47,9 +49,11 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // JavaScriptから呼び出すインターフェースを登録
         webView.addJavascriptInterface(new WebAppInterface(), "Android");
         webView.loadUrl("file:///android_asset/player.html");
 
+        // ファイルピッカーの結果を受け取る
         filePickerLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
             if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
                 Uri uri = result.getData().getData();
@@ -60,11 +64,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // AudioServiceの開始とバインド
         Intent serviceIntent = new Intent(this, AudioService.class);
         startService(serviceIntent);
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
     }
 
+    // JavaScriptから呼び出されるインターフェース
     private class WebAppInterface {
         @android.webkit.JavascriptInterface
         public void playAudio(String filePath) {
@@ -88,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // Make sure you import ServiceConnection
+    // AudioServiceとの接続管理
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -103,15 +109,16 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    // 戻るボタンを無効化（必要に応じて変更）
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
-            // Prevent going back
             return true;
         }
         return super.onKeyDown(keyCode, event);
     }
 
+    // 終了時にサービスのバインドを解除
     @Override
     protected void onDestroy() {
         super.onDestroy();
