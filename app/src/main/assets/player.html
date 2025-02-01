@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,16 +13,19 @@
             justify-content: center;
             height: 100vh;
             background-color: #f4f4f4;
+            margin: 0;
         }
         .player-container {
             text-align: center;
             background-color: #fff;
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            width: 90%;
+            max-width: 400px;
         }
-        button, input[type="file"] {
-            padding: 10px 20px;
+        button {
+            padding: 12px 20px;
             font-size: 18px;
             background-color: #4CAF50;
             color: white;
@@ -30,6 +33,7 @@
             border-radius: 5px;
             cursor: pointer;
             margin: 10px;
+            width: 80%;
         }
         button:hover {
             background-color: #45a049;
@@ -38,18 +42,20 @@
             margin-top: 20px;
             width: 100%;
         }
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
     <div class="player-container">
         <h1>MP3 Player</h1>
-        <input type="file" id="fileInput" accept="audio/*">
-        <button id="playBtn">Play</button>
-        <button id="pauseBtn">Pause</button>
-        <button id="stopBtn">Stop</button>
-        <audio id="audioPlayer" controls>
-            Your browser does not support the audio element.
-        </audio>
+        <input type="file" id="fileInput" accept="audio/*" class="hidden">
+        <button id="openFile">MP3を選択</button>
+        <button id="playBtn">▶ 再生</button>
+        <button id="pauseBtn">⏸ 一時停止</button>
+        <button id="stopBtn">⏹ 停止</button>
+        <audio id="audioPlayer" controls></audio>
     </div>
 
     <script>
@@ -58,21 +64,37 @@
         const playBtn = document.getElementById('playBtn');
         const pauseBtn = document.getElementById('pauseBtn');
         const stopBtn = document.getElementById('stopBtn');
+        const openFile = document.getElementById('openFile');
+
+        // ファイル選択
+        openFile.addEventListener('click', function() {
+            if (window.Android) {
+                window.Android.openFileChooser(); // Javaのメソッドを呼び出す
+            } else {
+                fileInput.click();
+            }
+        });
 
         fileInput.addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
                 const fileURL = URL.createObjectURL(file);
-                audioPlayer.src = fileURL;
-                audioPlayer.load();
+                setAudioFile(fileURL);
             }
         });
 
+        // Javaから呼び出される関数
+        function setAudioFile(filePath) {
+            audioPlayer.src = filePath;
+            audioPlayer.load();
+        }
+
+        // 再生・停止・一時停止
         playBtn.addEventListener('click', function() {
             if (audioPlayer.src) {
                 audioPlayer.play();
             } else {
-                alert("Please select an MP3 file first.");
+                alert("MP3ファイルを選択してください");
             }
         });
 
@@ -84,6 +106,12 @@
             audioPlayer.pause();
             audioPlayer.currentTime = 0;
         });
+
+        // 戻るボタンを封じる
+        window.history.pushState(null, null, location.href);
+        window.onpopstate = function() {
+            window.history.pushState(null, null, location.href);
+        };
     </script>
 </body>
 </html>
