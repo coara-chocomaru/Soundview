@@ -82,13 +82,13 @@ public class AudioService extends Service {
         int iconRes;
         switch (playbackStatus) {
             case "Playing":
-                iconRes = R.drawable.ic_playing; // 再生中のアイコン
+                iconRes = R.drawable.ic_playing;
                 break;
             case "Paused":
-                iconRes = R.drawable.ic_paused; // 一時停止アイコン
+                iconRes = R.drawable.ic_paused;
                 break;
             default:
-                iconRes = R.drawable.ic_stopped; // 停止アイコン
+                iconRes = R.drawable.ic_stopped;
         }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
@@ -99,7 +99,6 @@ public class AudioService extends Service {
                 .addAction(createAction("⏸", "PAUSE"))
                 .addAction(createAction("⏹", "STOP"))
                 .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setStyle(new NotificationCompat.DecoratedCustomViewStyle()) // カスタムスタイル適用
                 .setOngoing(playbackStatus.equals("Playing"))
                 .setContentIntent(getPendingIntent())
                 .build();
