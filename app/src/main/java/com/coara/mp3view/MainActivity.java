@@ -31,7 +31,9 @@ public class MainActivity extends AppCompatActivity {
                 if (mp3FilePath != null) {
                     Toast.makeText(this, "File selected: " + mp3FilePath, Toast.LENGTH_SHORT).show();
                     // WebViewにMP3ファイルのパスを渡す
-                    webView.evaluateJavascript("setAudioFile('" + mp3FilePath + "')", null);
+                    if (webView != null) {
+                        webView.evaluateJavascript("setAudioFile('" + mp3FilePath + "')", null);
+                    }
                 } else {
                     Toast.makeText(this, "Failed to get file path.", Toast.LENGTH_SHORT).show();
                 }
