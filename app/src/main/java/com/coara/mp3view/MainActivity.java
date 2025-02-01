@@ -21,6 +21,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int STORAGE_PERMISSION_CODE = 1;
     private String mp3FilePath;
+    private WebView webView;
 
     // ActivityResultLauncherを定義
     private ActivityResultLauncher<Intent> resultLauncher = registerForActivityResult(
@@ -32,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(this, "File selected: " + mp3FilePath, Toast.LENGTH_SHORT).show();
                     // WebViewにMP3ファイルのパスを渡す
                     if (webView != null) {
-                        webView.evaluateJavascript("setAudioFile('" + mp3FilePath + "')", null);
+                        webView.post(() -> webView.evaluateJavascript("setAudioFile('" + mp3FilePath + "')", null));
                     }
                 } else {
                     Toast.makeText(this, "Failed to get file path.", Toast.LENGTH_SHORT).show();
@@ -40,14 +41,12 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-    private WebView webView;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // WebViewの設定はsetContentView()の後に行う
+        // WebViewの設定
         webView = findViewById(R.id.webView);
         webView.loadUrl("file:///android_asset/player.html");
         webView.setWebChromeClient(new WebChromeClient());
@@ -107,7 +106,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public void onBackPressed() {
         // バックキーが押されてもアプリは終了しない
-        // 必要に応じてここでダイアログを表示するなどして、戻る動作をカスタマイズできます
         Toast.makeText(this, "Back button disabled", Toast.LENGTH_SHORT).show();
     }
 }
