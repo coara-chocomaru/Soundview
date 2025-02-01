@@ -7,7 +7,7 @@
 
     <application
         android:allowBackup="true"
-        aandroid:theme="@style/Theme.AppCompat.DayNight"
+        android:theme="@style/Theme.AppCompat.DayNight"
         android:label="MP3view"
         android:usesCleartextTraffic="true">
         
