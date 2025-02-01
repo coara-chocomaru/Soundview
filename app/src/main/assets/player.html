@@ -22,7 +22,8 @@
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             position: relative;
-            width: 300px;
+            max-width: 500px;
+            width: 100%;
         }
         button {
             padding: 10px 20px;
@@ -33,7 +34,6 @@
             border-radius: 5px;
             cursor: pointer;
             margin: 10px;
-            width: 100%;
         }
         button:hover {
             background-color: #45a049;
@@ -75,7 +75,7 @@
 <body>
     <div class="player-container">
         <h1>MP3 Player</h1>
-        <button id="pickFileBtn">Select MP3 File</button>
+        <input type="file" id="fileInput" accept="audio/mp3">
         <button id="playBtn">Play</button>
         <button id="pauseBtn">Pause</button>
         <button id="stopBtn">Stop</button>
@@ -91,12 +91,26 @@
         const playBtn = document.getElementById('playBtn');
         const pauseBtn = document.getElementById('pauseBtn');
         const stopBtn = document.getElementById('stopBtn');
-        const pickFileBtn = document.getElementById('pickFileBtn');
         const animation = document.getElementById('animation');
+        const fileInput = document.getElementById('fileInput');
 
-        // 音声を再生
+        let selectedFile = null;
+
+        // ファイル選択時にMP3ファイルを読み込み
+        fileInput.addEventListener('change', function() {
+            const file = fileInput.files[0];
+            if (file && file.type === 'audio/mp3') {
+                const fileURL = URL.createObjectURL(file);
+                audioPlayer.src = fileURL;
+                selectedFile = file;
+            } else {
+                alert('Please select a valid MP3 file.');
+            }
+        });
+
+        // 再生ボタン
         playBtn.addEventListener('click', function() {
-            if (audioPlayer.src) {
+            if (selectedFile) {
                 audioPlayer.play();
                 animation.style.display = 'block'; // 再生中にアニメーション表示
             } else {
@@ -104,35 +118,17 @@
             }
         });
 
-        // 音声を一時停止
+        // 一時停止ボタン
         pauseBtn.addEventListener('click', function() {
             audioPlayer.pause();
             animation.style.display = 'none'; // 停止時にアニメーション非表示
         });
 
-        // 音声を停止
+        // 停止ボタン
         stopBtn.addEventListener('click', function() {
             audioPlayer.pause();
             audioPlayer.currentTime = 0;
             animation.style.display = 'none'; // 停止時にアニメーション非表示
-        });
-
-        // AndroidからMP3のパスを受け取る
-        function setAudioFile(filePath) {
-            document.getElementById('audioSource').src = filePath;
-            audioPlayer.load();
-        }
-
-        // Androidから呼び出される関数
-        if (window.Android) {
-            window.Android.setAudioFile = setAudioFile;
-        }
-
-        // ファイル選択ボタン
-        pickFileBtn.addEventListener('click', function() {
-            if (window.Android) {
-                window.Android.openFilePicker(); // Androidアプリにファイル選択をリクエスト
-            }
         });
     </script>
 </body>
