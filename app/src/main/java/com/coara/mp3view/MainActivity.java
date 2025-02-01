@@ -1,7 +1,11 @@
 package com.coara.mp3view;
 
+import android.Manifest;
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.webkit.ValueCallback;
@@ -11,7 +15,10 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import android.content.Context;
 import android.content.ComponentName;
 import android.content.ServiceConnection;
@@ -19,6 +26,13 @@ import android.os.IBinder;
 import android.view.KeyEvent;
 
 public class MainActivity extends AppCompatActivity {
+    private static final int PERMISSIONS_REQUEST_CODE = 100;
+    private static final String[] REQUIRED_PERMISSIONS = new String[]{
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE,
+            Manifest.permission.MANAGE_EXTERNAL_STORAGE  // Android 11+ で利用する場合
+    };
+
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
     private ActivityResultLauncher<Intent> filePickerLauncher;
@@ -30,6 +44,26 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // 権限チェック
+        if (!hasRequiredPermissions()) {
+            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, PERMISSIONS_REQUEST_CODE);
+        } else {
+            initApp();
+        }
+    }
+
+    // 必要な権限をすべて持っているか確認
+    private boolean hasRequiredPermissions() {
+        for (String permission : REQUIRED_PERMISSIONS) {
+            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // 権限が付与されている場合の初期化処理
+    private void initApp() {
         // WebView 初期化
         webView = findViewById(R.id.webView);
         WebSettings webSettings = webView.getSettings();
@@ -65,6 +99,43 @@ public class MainActivity extends AppCompatActivity {
         Intent serviceIntent = new Intent(this, AudioService.class);
         startService(serviceIntent);
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+    }
+
+    // ユーザーが権限要求に対する応答
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == PERMISSIONS_REQUEST_CODE) {
+            boolean allGranted = true;
+            if (grantResults.length > 0) {
+                for (int result : grantResults) {
+                    if (result != PackageManager.PERMISSION_GRANTED) {
+                        allGranted = false;
+                        break;
+                    }
+                }
+            } else {
+                allGranted = false;
+            }
+
+            if (allGranted) {
+                initApp();
+            } else {
+                // 権限が拒否された場合のアラートダイアログを表示し、アプリを安全に終了
+                new AlertDialog.Builder(this)
+                        .setTitle("権限が拒否されました")
+                        .setMessage("必要な権限が付与されていないため、アプリが正常に動作しません。アプリを終了します。")
+                        .setPositiveButton("終了", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                finish();
+                            }
+                        })
+                        .setCancelable(false)
+                        .show();
+            }
+        } else {
+            super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
     }
 
     private class WebAppInterface {
