@@ -5,69 +5,112 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MP3 Player</title>
     <style>
+        /* ダークマテリアルデザイン */
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Roboto', sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100vh;
-            background-color: #f4f4f4;
+            background: linear-gradient(135deg, #121212, #1e1e1e);
             margin: 0;
+            color: white;
         }
 
         .player-container {
             text-align: center;
-            background-color: #fff;
+            background: rgba(40, 40, 40, 0.9);
             padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
             width: 100%;
             max-width: 400px;
         }
 
         h1 {
             margin-bottom: 20px;
+            font-size: 24px;
         }
 
         button, input[type="file"] {
-            padding: 10px 20px;
+            padding: 12px 20px;
             font-size: 18px;
-            background-color: #4CAF50;
-            color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 8px;
             cursor: pointer;
-            margin: 10px;
             width: 100%;
+            transition: 0.3s;
+        }
+
+        button {
+            background: #6200ea;
+            color: white;
+            margin: 10px 0;
+            box-shadow: 0 4px 10px rgba(98, 0, 234, 0.5);
         }
 
         button:hover {
-            background-color: #45a049;
-        }
-
-        #audioPlayer {
-            margin-top: 20px;
-            width: 100%;
+            background: #7b1fa2;
+            box-shadow: 0 6px 12px rgba(123, 31, 162, 0.5);
         }
 
         #stopBtn {
-            background-color: #f44336;
+            background: #d32f2f;
+            box-shadow: 0 4px 10px rgba(211, 47, 47, 0.5);
         }
 
         #stopBtn:hover {
-            background-color: #e53935;
+            background: #b71c1c;
+            box-shadow: 0 6px 12px rgba(183, 28, 28, 0.5);
         }
 
-        .loading {
+        /* 波形アニメーション */
+        .wave-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+            height: 50px;
+        }
+
+        .wave {
+            width: 8px;
+            height: 30px;
+            margin: 0 4px;
+            background: #03dac6;
+            animation: wave-animation 1s infinite ease-in-out;
+        }
+
+        .wave:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .wave:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        .wave:nth-child(4) {
+            animation-delay: 0.6s;
+        }
+
+        .wave:nth-child(5) {
+            animation-delay: 0.8s;
+        }
+
+        @keyframes wave-animation {
+            0%, 100% {
+                height: 20px;
+                background: #03dac6;
+            }
+            50% {
+                height: 40px;
+                background: #bb86fc;
+            }
+        }
+
+        .hidden {
             display: none;
-            text-align: center;
-            font-size: 18px;
-            margin-top: 10px;
-        }
-
-        .loading.active {
-            display: block;
         }
 
     </style>
@@ -76,13 +119,19 @@
     <div class="player-container">
         <h1>MP3 Player</h1>
         <input type="file" id="fileInput" accept="audio/*">
-        <button id="playBtn">Play</button>
-        <button id="pauseBtn">Pause</button>
-        <button id="stopBtn">Stop</button>
-        <audio id="audioPlayer" controls>
-            Your browser does not support the audio element.
-        </audio>
-        <div class="loading" id="loadingIndicator">Loading...</div>
+        <button id="playBtn">▶ Play</button>
+        <button id="pauseBtn">⏸ Pause</button>
+        <button id="stopBtn">⏹ Stop</button>
+        <audio id="audioPlayer" controls class="hidden"></audio>
+
+        <!-- 波形アニメーション -->
+        <div class="wave-container hidden" id="waveAnimation">
+            <div class="wave"></div>
+            <div class="wave"></div>
+            <div class="wave"></div>
+            <div class="wave"></div>
+            <div class="wave"></div>
+        </div>
     </div>
 
     <script>
@@ -91,7 +140,7 @@
         const playBtn = document.getElementById('playBtn');
         const pauseBtn = document.getElementById('pauseBtn');
         const stopBtn = document.getElementById('stopBtn');
-        const loadingIndicator = document.getElementById('loadingIndicator');
+        const waveAnimation = document.getElementById('waveAnimation');
 
         let selectedFile = null;
 
@@ -104,7 +153,6 @@
                 audioPlayer.src = fileURL;
                 audioPlayer.load();
                 audioPlayer.pause();
-                loadingIndicator.classList.add('active');
             }
         });
 
@@ -112,7 +160,10 @@
         playBtn.addEventListener('click', function() {
             if (selectedFile) {
                 audioPlayer.play();
-                loadingIndicator.classList.remove('active');
+                waveAnimation.classList.remove('hidden');
+                if (window.Android) {
+                    window.Android.playAudio(audioPlayer.src);
+                }
             } else {
                 alert("Please select an MP3 file first.");
             }
@@ -121,22 +172,29 @@
         // 一時停止ボタン
         pauseBtn.addEventListener('click', function() {
             audioPlayer.pause();
+            waveAnimation.classList.add('hidden');
+            if (window.Android) {
+                window.Android.pauseAudio();
+            }
         });
 
         // 停止ボタン
         stopBtn.addEventListener('click', function() {
             audioPlayer.pause();
             audioPlayer.currentTime = 0;
+            waveAnimation.classList.add('hidden');
+            if (window.Android) {
+                window.Android.stopAudio();
+            }
         });
 
         // 再生終了後の処理
         audioPlayer.addEventListener('ended', function() {
-            alert('Playback finished.');
-            audioPlayer.currentTime = 0;
+            waveAnimation.classList.add('hidden');
+            if (window.Android) {
+                window.Android.stopAudio();
+            }
         });
-
-        // HTML5のAudio APIとJavaScriptを利用して音楽を再生
-        // Android側に通知を送信する場合はここでwindow.Android.playAudio(fileURL)などを呼び出す
     </script>
 </body>
 </html>
