@@ -13,6 +13,7 @@
             justify-content: center;
             height: 100vh;
             background-color: #f4f4f4;
+            margin: 0;
         }
         .player-container {
             text-align: center;
@@ -21,6 +22,7 @@
             border-radius: 10px;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
             position: relative;
+            width: 300px;
         }
         button {
             padding: 10px 20px;
@@ -31,12 +33,14 @@
             border-radius: 5px;
             cursor: pointer;
             margin: 10px;
+            width: 100%;
         }
         button:hover {
             background-color: #45a049;
         }
         #audioPlayer {
             margin-top: 20px;
+            width: 100%;
         }
 
         /* アニメーション */
@@ -71,6 +75,7 @@
 <body>
     <div class="player-container">
         <h1>MP3 Player</h1>
+        <button id="pickFileBtn">Select MP3 File</button>
         <button id="playBtn">Play</button>
         <button id="pauseBtn">Pause</button>
         <button id="stopBtn">Stop</button>
@@ -86,6 +91,7 @@
         const playBtn = document.getElementById('playBtn');
         const pauseBtn = document.getElementById('pauseBtn');
         const stopBtn = document.getElementById('stopBtn');
+        const pickFileBtn = document.getElementById('pickFileBtn');
         const animation = document.getElementById('animation');
 
         playBtn.addEventListener('click', function() {
@@ -108,7 +114,13 @@
             animation.style.display = 'none'; // 停止時にアニメーション非表示
         });
 
-        // ここでAndroidからMP3のパスを渡す
+        pickFileBtn.addEventListener('click', function() {
+            if (window.Android) {
+                window.Android.openFilePicker(); // Androidにファイルピッカーを開くようリクエスト
+            }
+        });
+
+        // AndroidからMP3のパスを渡す
         function setAudioFile(filePath) {
             document.getElementById('audioSource').src = filePath;
             audioPlayer.load();
