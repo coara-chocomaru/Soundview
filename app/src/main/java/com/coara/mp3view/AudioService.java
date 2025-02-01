@@ -21,6 +21,7 @@ public class AudioService extends Service {
     private static final String CHANNEL_ID = "AudioServiceChannel";
     private static final int NOTIFICATION_ID = 1;
     private String currentFile = null;
+    private String playbackStatus = "Stopped";
 
     public class AudioBinder extends Binder {
         public AudioService getService() {
@@ -33,7 +34,7 @@ public class AudioService extends Service {
         super.onCreate();
         createNotificationChannel();
         registerReceiver(notificationReceiver, new IntentFilter("AUDIO_CONTROL"));
-        updateNotification("Stopped");
+        updateNotification();
     }
 
     @Override
@@ -51,7 +52,8 @@ public class AudioService extends Service {
             mediaPlayer.prepare();
             mediaPlayer.start();
             currentFile = filePath;
-            updateNotification("Playing");
+            playbackStatus = "Playing";
+            updateNotification();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -60,7 +62,8 @@ public class AudioService extends Service {
     public void pauseAudio() {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
-            updateNotification("Paused");
+            playbackStatus = "Paused";
+            updateNotification();
         }
     }
 
@@ -70,20 +73,35 @@ public class AudioService extends Service {
             mediaPlayer.release();
             mediaPlayer = null;
             currentFile = null;
-            updateNotification("Stopped");
+            playbackStatus = "Stopped";
+            updateNotification();
         }
     }
 
-    private void updateNotification(String status) {
+    private void updateNotification() {
+        int iconRes;
+        switch (playbackStatus) {
+            case "Playing":
+                iconRes = R.drawable.ic_playing; // 再生中のアイコン
+                break;
+            case "Paused":
+                iconRes = R.drawable.ic_paused; // 一時停止アイコン
+                break;
+            default:
+                iconRes = R.drawable.ic_stopped; // 停止アイコン
+        }
+
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("MP3 Player")
-                .setContentText(status)
-                .setSmallIcon(R.drawable.ic_music)
-                .addAction(createAction("Play", "PLAY"))
-                .addAction(createAction("Pause", "PAUSE"))
-                .addAction(createAction("Stop", "STOP"))
+                .setContentText(playbackStatus)
+                .setSmallIcon(iconRes)
+                .addAction(createAction("▶", "PLAY"))
+                .addAction(createAction("⏸", "PAUSE"))
+                .addAction(createAction("⏹", "STOP"))
                 .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setOngoing(true)
+                .setStyle(new NotificationCompat.DecoratedCustomViewStyle()) // カスタムスタイル適用
+                .setOngoing(playbackStatus.equals("Playing"))
+                .setContentIntent(getPendingIntent())
                 .build();
 
         startForeground(NOTIFICATION_ID, notification);
@@ -92,8 +110,13 @@ public class AudioService extends Service {
     private NotificationCompat.Action createAction(String title, String action) {
         Intent intent = new Intent("AUDIO_CONTROL");
         intent.putExtra("ACTION", action);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, action.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, action.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         return new NotificationCompat.Action(0, title, pendingIntent);
+    }
+
+    private PendingIntent getPendingIntent() {
+        Intent intent = new Intent(this, MainActivity.class);
+        return PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
     private void createNotificationChannel() {
