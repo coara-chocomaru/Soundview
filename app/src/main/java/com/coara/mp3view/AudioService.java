@@ -13,7 +13,6 @@ import androidx.core.app.NotificationCompat;
 import android.content.Context;
 
 public class AudioService extends Service {
-
     private MediaPlayer mediaPlayer;
     private final IBinder binder = new AudioBinder();
     private static final String CHANNEL_ID = "AudioServiceChannel";
@@ -75,7 +74,7 @@ public class AudioService extends Service {
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("MP3 Player")
                 .setContentText(status)
-                .setSmallIcon(android.R.drawable.ic_media_play)
+                .setSmallIcon(android.R.drawable.ic_media_play)  // システムアイコンを利用
                 .setOngoing(true)
                 .build();
         startForeground(NOTIFICATION_ID, notification);
