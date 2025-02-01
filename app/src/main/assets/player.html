@@ -94,6 +94,7 @@
         const pickFileBtn = document.getElementById('pickFileBtn');
         const animation = document.getElementById('animation');
 
+        // 音声を再生
         playBtn.addEventListener('click', function() {
             if (audioPlayer.src) {
                 audioPlayer.play();
@@ -103,24 +104,20 @@
             }
         });
 
+        // 音声を一時停止
         pauseBtn.addEventListener('click', function() {
             audioPlayer.pause();
             animation.style.display = 'none'; // 停止時にアニメーション非表示
         });
 
+        // 音声を停止
         stopBtn.addEventListener('click', function() {
             audioPlayer.pause();
             audioPlayer.currentTime = 0;
             animation.style.display = 'none'; // 停止時にアニメーション非表示
         });
 
-        pickFileBtn.addEventListener('click', function() {
-            if (window.Android) {
-                window.Android.openFilePicker(); // Androidにファイルピッカーを開くようリクエスト
-            }
-        });
-
-        // AndroidからMP3のパスを渡す
+        // AndroidからMP3のパスを受け取る
         function setAudioFile(filePath) {
             document.getElementById('audioSource').src = filePath;
             audioPlayer.load();
@@ -130,6 +127,13 @@
         if (window.Android) {
             window.Android.setAudioFile = setAudioFile;
         }
+
+        // ファイル選択ボタン
+        pickFileBtn.addEventListener('click', function() {
+            if (window.Android) {
+                window.Android.openFilePicker(); // Androidアプリにファイル選択をリクエスト
+            }
+        });
     </script>
 </body>
 </html>
