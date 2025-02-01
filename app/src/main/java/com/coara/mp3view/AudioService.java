@@ -1,81 +1,76 @@
 package com.coara.mp3view;
 
+import android.app.Service;
+import android.content.Intent;
+import android.media.MediaPlayer;
+import android.os.Binder;
+import android.os.IBinder;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
-import android.app.PendingIntent;
-import android.app.Service;
-import android.content.Intent;
 import android.os.Build;
-import android.os.IBinder;
-import android.webkit.WebChromeClient;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
 public class AudioService extends Service {
-    private static final String CHANNEL_ID = "audio_service_channel";
-    private WebView webView;
+    private MediaPlayer mediaPlayer;
+    private final IBinder binder = new AudioBinder();
+    private static final String CHANNEL_ID = "AudioServiceChannel";
+
+    public class AudioBinder extends Binder {
+        AudioService getService() {
+            return AudioService.this;
+        }
+    }
 
     @Override
     public void onCreate() {
         super.onCreate();
-
-        // 通知チャンネルの作成 (Android 8.0+)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                CHANNEL_ID,
-                "MP3 Player Service",
-                NotificationManager.IMPORTANCE_LOW
-            );
-            NotificationManager manager = getSystemService(NotificationManager.class);
-            if (manager != null) {
-                manager.createNotificationChannel(channel);
-            }
-        }
-
-        // WebViewの初期化
-        webView = new WebView(this);
-        WebSettings webSettings = webView.getSettings();
-        webSettings.setJavaScriptEnabled(true);
-        webSettings.setMediaPlaybackRequiresUserGesture(false); // 自動再生を許可
-        webView.setWebChromeClient(new WebChromeClient());
-        webView.loadUrl("file:///android_asset/player.html"); // HTMLをロード
-
-        // フォアグラウンド通知を表示
-        startForeground(1, createNotification());
+        createNotificationChannel();
+        startForeground(1, getNotification("Stopped"));
     }
 
-    private Notification createNotification() {
-        Intent intent = new Intent(this, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-
-        return new NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("MP3 Player")
-            .setContentText("再生中...")
-            .setSmallIcon(R.drawable.ic_music) // アイコンは res/drawable に追加
-            .setContentIntent(pendingIntent)
-            .setOngoing(true) // ユーザーが通知をスワイプで消せないように
-            .build();
-    }
-
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        return START_STICKY; // サービスが強制終了されても再起動
-    }
-
-    @Override
-    public void onDestroy() {
-        if (webView != null) {
-            webView.destroy();
-        }
-        super.onDestroy();
-    }
-
-    @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+        return binder;
+    }
+
+    public void playAudio(String filePath) {
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+        }
+        mediaPlayer = new MediaPlayer();
+        try {
+            mediaPlayer.setDataSource(filePath);
+            mediaPlayer.prepare();
+            mediaPlayer.start();
+            startForeground(1, getNotification("Playing"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void stopAudio() {
+        if (mediaPlayer != null) {
+            mediaPlayer.stop();
+            mediaPlayer.release();
+            mediaPlayer = null;
+            stopForeground(true);
+        }
+    }
+
+    private Notification getNotification(String status) {
+        return new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("MP3 Player")
+                .setContentText(status)
+                .setSmallIcon(R.drawable.ic_music)
+                .build();
+    }
+
+    private void createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Audio Service", NotificationManager.IMPORTANCE_LOW);
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            manager.createNotificationChannel(channel);
+        }
     }
 }
