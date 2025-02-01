@@ -5,6 +5,8 @@ import android.content.Intent;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.widget.Toast;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import android.widget.Button;
 import android.content.pm.PackageManager;
@@ -12,8 +14,6 @@ import android.net.Uri;
 import android.provider.OpenableColumns;
 import android.webkit.WebChromeClient;
 import android.webkit.WebView;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -28,24 +28,30 @@ public class MainActivity extends AppCompatActivity {
             if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                 Uri selectedFileUri = result.getData().getData();
                 mp3FilePath = getFilePath(selectedFileUri);
-                Toast.makeText(this, "File selected: " + mp3FilePath, Toast.LENGTH_SHORT).show();
+                if (mp3FilePath != null) {
+                    Toast.makeText(this, "File selected: " + mp3FilePath, Toast.LENGTH_SHORT).show();
+                    // WebViewにMP3ファイルのパスを渡す
+                    webView.evaluateJavascript("setAudioFile('" + mp3FilePath + "')", null);
+                } else {
+                    Toast.makeText(this, "Failed to get file path.", Toast.LENGTH_SHORT).show();
+                }
             }
         });
+
+    private WebView webView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // WebViewの設定
+        webView = findViewById(R.id.webView);
+        webView.loadUrl("file:///android_asset/player.html");
+        webView.setWebChromeClient(new WebChromeClient());
+
         // 権限確認
         checkPermissions();
-
-        // WebViewの設定
-        WebView webView = findViewById(R.id.webView);
-        webView.loadUrl("file:///android_asset/player.html");
-
-        // WebViewにカスタムWebChromeClientを設定
-        webView.setWebChromeClient(new WebChromeClient());
 
         // MP3ファイル選択ボタン
         Button pickFileButton = findViewById(R.id.pickFileButton);
@@ -74,7 +80,7 @@ public class MainActivity extends AppCompatActivity {
     // ファイルピッカーを開く
     private void openFilePicker() {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-        intent.setType("audio/*");  // すべての音声ファイルに対応
+        intent.setType("audio/*");
         intent.addCategory(Intent.CATEGORY_OPENABLE);
         resultLauncher.launch(intent); // ActivityResultLauncher を使ってファイル選択
     }
@@ -95,14 +101,11 @@ public class MainActivity extends AppCompatActivity {
         return path;
     }
 
-    // バックボタン無効化
+    // バックキーを無効にして、アプリを終了しないようにする
     @Override
     public void onBackPressed() {
-        WebView webView = findViewById(R.id.webView);
-        if (webView.canGoBack()) {
-            webView.goBack();
-        } else {
-            super.onBackPressed();
-        }
+        // バックキーが押されてもアプリは終了しない
+        // 必要に応じてここでダイアログを表示するなどして、戻る動作をカスタマイズできます
+        Toast.makeText(this, "Back button disabled", Toast.LENGTH_SHORT).show();
     }
 }
