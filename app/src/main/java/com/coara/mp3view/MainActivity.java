@@ -79,7 +79,8 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        // 戻るボタン無効化
+        // onBackPressedを上書きして戻るボタンを無効にする
+        getOnBackPressedDispatcher().onBackPressed();
     }
 
     @Override
