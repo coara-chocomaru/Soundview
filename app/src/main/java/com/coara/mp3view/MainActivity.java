@@ -11,10 +11,9 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.provider.OpenableColumns;
 import android.webkit.WebChromeClient;
-import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
 import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.ActivityResultContracts;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
@@ -24,7 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private String mp3FilePath;
 
     // ActivityResultLauncherを定義
-    private final ActivityResultLauncher<Intent> resultLauncher = registerForActivityResult(
+    private ActivityResultLauncher<Intent> resultLauncher = registerForActivityResult(
         new ActivityResultContracts.StartActivityForResult(), result -> {
             if (result.getResultCode() == RESULT_OK && result.getData() != null) {
                 Uri selectedFileUri = result.getData().getData();
@@ -77,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.setType("audio/mp3");
         intent.addCategory(Intent.CATEGORY_OPENABLE);
-        resultLauncher.launch(intent);
+        resultLauncher.launch(intent); // ActivityResultLauncher を使ってファイル選択
     }
 
     // URIからファイルパスを取得
@@ -103,8 +102,7 @@ public class MainActivity extends AppCompatActivity {
         if (webView.canGoBack()) {
             webView.goBack();
         } else {
-            // onBackPressedDispatcherを使う
-            getOnBackPressedDispatcher().onBackPressed();
+            super.onBackPressed();
         }
     }
 }
