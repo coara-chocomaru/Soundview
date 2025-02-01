@@ -17,6 +17,7 @@ import android.content.Context;
 import android.content.ComponentName;
 import android.content.ServiceConnection;
 import android.os.IBinder;
+import android.view.KeyEvent;
 
 public class MainActivity extends AppCompatActivity {
     private WebView webView;
@@ -101,6 +102,15 @@ public class MainActivity extends AppCompatActivity {
             isBound = false;
         }
     };
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_BACK) {
+            // 戻るボタンを無効化
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
+    }
 
     @Override
     protected void onDestroy() {
