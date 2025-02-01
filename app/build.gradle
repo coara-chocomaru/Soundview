@@ -7,8 +7,8 @@ android {
     namespace = 'com.coara.mp3view'
 
     defaultConfig {
-        minSdk = 26
-        targetSdk = 28
+        minSdk = 21
+        targetSdk = 24
         versionCode = 1
         versionName = "1.0"
         multiDexEnabled = true
