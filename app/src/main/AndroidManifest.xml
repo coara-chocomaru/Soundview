@@ -1,5 +1,4 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-
     <!-- 必要なパーミッション -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -12,9 +11,10 @@
         android:label="MP3view"
         android:usesCleartextTraffic="true"
         android:requestLegacyExternalStorage="true">
-        
+
         <!-- メインアクティビティ -->
-        <activity android:name=".MainActivity"
+        <activity
+            android:name=".MainActivity"
             android:configChanges="keyboardHidden|orientation|screenSize"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
@@ -23,23 +23,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        
+
         <!-- AudioService の宣言 -->
         <service
             android:name=".AudioService"
             android:exported="true"
             android:foregroundServiceType="mediaPlayback"/>
-        
-        <!-- FileProvider の設定（必要な場合） -->
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.provider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths"/>
-        </provider>
-        
     </application>
 </manifest>
