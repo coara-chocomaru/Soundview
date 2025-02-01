@@ -44,22 +44,21 @@ public class AudioService extends Service {
         return binder;
     }
 
-    // AudioService側で音声再生を行う
+    // ファイル再生（URI文字列で受け取る）
     public void playAudio(String filePath) {
-        // 既存のMediaPlayerがあれば解放
         if (mediaPlayer != null) {
             mediaPlayer.release();
         }
         mediaPlayer = new MediaPlayer();
         try {
-            // filePathはURI文字列として渡されるので、Uriに変換してからsetDataSource(Context, Uri)を呼ぶ
             Uri uri = Uri.parse(filePath);
             mediaPlayer.setDataSource(getApplicationContext(), uri);
             mediaPlayer.prepare();
             mediaPlayer.start();
             currentFile = filePath;
-            playbackStatus = "Playing";
+            playbackStatus = "PLAY";
             updateNotification();
+            sendStateBroadcast("PLAY");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -69,8 +68,9 @@ public class AudioService extends Service {
     public void pauseAudio() {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
-            playbackStatus = "Paused";
+            playbackStatus = "PAUSE";
             updateNotification();
+            sendStateBroadcast("PAUSE");
         }
     }
 
@@ -81,19 +81,20 @@ public class AudioService extends Service {
             mediaPlayer.release();
             mediaPlayer = null;
             currentFile = null;
-            playbackStatus = "Stopped";
+            playbackStatus = "STOP";
             updateNotification();
+            sendStateBroadcast("STOP");
         }
     }
 
-    // 通知の内容を更新する
+    // 通知更新処理
     private void updateNotification() {
         int iconRes;
         switch (playbackStatus) {
-            case "Playing":
+            case "PLAY":
                 iconRes = R.drawable.ic_playing;
                 break;
-            case "Paused":
+            case "PAUSE":
                 iconRes = R.drawable.ic_paused;
                 break;
             default:
@@ -108,14 +109,14 @@ public class AudioService extends Service {
                 .addAction(createAction("⏸", "PAUSE"))
                 .addAction(createAction("⏹", "STOP"))
                 .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setOngoing(playbackStatus.equals("Playing"))
+                .setOngoing(playbackStatus.equals("PLAY"))
                 .setContentIntent(getPendingIntent())
                 .build();
 
         startForeground(NOTIFICATION_ID, notification);
     }
 
-    // 通知に追加するアクションボタンを作成
+    // 通知のアクションボタン作成
     private NotificationCompat.Action createAction(String title, String action) {
         Intent intent = new Intent("AUDIO_CONTROL");
         intent.putExtra("ACTION", action);
@@ -124,14 +125,14 @@ public class AudioService extends Service {
         return new NotificationCompat.Action(0, title, pendingIntent);
     }
 
-    // 通知タップ時に起動するPendingIntentを作成
+    // 通知タップ時のPendingIntent作成
     private PendingIntent getPendingIntent() {
         Intent intent = new Intent(this, MainActivity.class);
         return PendingIntent.getActivity(this, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
-    // Android 8.0以上向けに通知チャネルを作成
+    // 通知チャネル作成（Android 8.0以上）
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Audio Service", NotificationManager.IMPORTANCE_LOW);
@@ -142,7 +143,14 @@ public class AudioService extends Service {
         }
     }
 
-    // 通知のボタン操作を受け取るブロードキャストレシーバー
+    // AudioServiceの各再生操作後にHTMLへ状態を伝えるためのブロードキャスト送信
+    private void sendStateBroadcast(String state) {
+        Intent intent = new Intent("ACTION_AUDIO_STATE");
+        intent.putExtra("state", state);
+        sendBroadcast(intent);
+    }
+
+    // 通知操作を受け取るブロードキャストレシーバー
     private final BroadcastReceiver notificationReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
