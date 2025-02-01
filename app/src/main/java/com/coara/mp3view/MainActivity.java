@@ -2,28 +2,36 @@ package com.coara.mp3view;
 
 import android.Manifest;
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import android.widget.Button;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.Build;
 import android.provider.OpenableColumns;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebView;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.ActivityResultContracts;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-
-import java.io.File;
-import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final int STORAGE_PERMISSION_CODE = 1;
-    private static final int PICK_MP3_REQUEST_CODE = 2;
     private String mp3FilePath;
+
+    // ActivityResultLauncherを定義
+    private final ActivityResultLauncher<Intent> resultLauncher = registerForActivityResult(
+        new ActivityResultContracts.StartActivityForResult(), result -> {
+            if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                Uri selectedFileUri = result.getData().getData();
+                mp3FilePath = getFilePath(selectedFileUri);
+                Toast.makeText(this, "File selected: " + mp3FilePath, Toast.LENGTH_SHORT).show();
+            }
+        });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -69,18 +77,7 @@ public class MainActivity extends AppCompatActivity {
         Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
         intent.setType("audio/mp3");
         intent.addCategory(Intent.CATEGORY_OPENABLE);
-        startActivityForResult(intent, PICK_MP3_REQUEST_CODE);
-    }
-
-    // ファイル選択後の処理
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == PICK_MP3_REQUEST_CODE && resultCode == RESULT_OK && data != null) {
-            Uri selectedFileUri = data.getData();
-            mp3FilePath = getFilePath(selectedFileUri);
-            Toast.makeText(this, "File selected: " + mp3FilePath, Toast.LENGTH_SHORT).show();
-        }
+        resultLauncher.launch(intent);
     }
 
     // URIからファイルパスを取得
@@ -106,8 +103,8 @@ public class MainActivity extends AppCompatActivity {
         if (webView.canGoBack()) {
             webView.goBack();
         } else {
-            // バックボタンを無効にする
-            super.onBackPressed();
+            // onBackPressedDispatcherを使う
+            getOnBackPressedDispatcher().onBackPressed();
         }
     }
 }
