@@ -13,18 +13,12 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.os.Build;
-import android.app.PendingIntent;
 import android.content.Context;
-import androidx.core.app.NotificationCompat;
 import android.content.ComponentName;
 import android.content.ServiceConnection;
 import android.os.IBinder;
 
 public class MainActivity extends AppCompatActivity {
-
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
     private ActivityResultLauncher<Intent> filePickerLauncher;
@@ -40,7 +34,6 @@ public class MainActivity extends AppCompatActivity {
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setAllowFileAccess(true);
-
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
@@ -54,6 +47,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        webView.addJavascriptInterface(new WebAppInterface(), "Android");
         webView.loadUrl("file:///android_asset/player.html");
 
         filePickerLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
@@ -63,32 +57,34 @@ public class MainActivity extends AppCompatActivity {
                     filePathCallback.onReceiveValue(new Uri[]{uri});
                     filePathCallback = null;
                 }
-            } else {
-                if (filePathCallback != null) {
-                    filePathCallback.onReceiveValue(null);
-                    filePathCallback = null;
-                }
             }
         });
 
-        // AudioServiceを開始
         Intent serviceIntent = new Intent(this, AudioService.class);
         startService(serviceIntent);
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
     }
 
-    @Override
-    public void onBackPressed() {
-        // onBackPressedを上書きして戻るボタンを無効にする
-        getOnBackPressedDispatcher().onBackPressed();
-    }
+    private class WebAppInterface {
+        @android.webkit.JavascriptInterface
+        public void playAudio(String filePath) {
+            if (audioService != null) {
+                audioService.playAudio(filePath);
+            }
+        }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (isBound) {
-            unbindService(serviceConnection);
-            isBound = false;
+        @android.webkit.JavascriptInterface
+        public void pauseAudio() {
+            if (audioService != null) {
+                audioService.pauseAudio();
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        public void stopAudio() {
+            if (audioService != null) {
+                audioService.stopAudio();
+            }
         }
     }
 
@@ -105,4 +101,13 @@ public class MainActivity extends AppCompatActivity {
             isBound = false;
         }
     };
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (isBound) {
+            unbindService(serviceConnection);
+            isBound = false;
+        }
+    }
 }
