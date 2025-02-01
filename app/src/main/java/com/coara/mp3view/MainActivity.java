@@ -1,9 +1,11 @@
 package com.coara.mp3view;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
@@ -25,6 +27,33 @@ public class MainActivity extends AppCompatActivity {
     private AudioService audioService;
     private boolean isBound = false;
 
+    // BroadcastReceiver：AudioServiceから送信された再生状態に応じてHTML内のaudio要素等を更新
+    private final BroadcastReceiver audioStateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String state = intent.getStringExtra("state");
+            if (state != null) {
+                switch (state) {
+                    case "PLAY":
+                        // HTML内のaudio要素を再生し、波形アニメーションを表示
+                        webView.evaluateJavascript("document.getElementById('audioPlayer').play();", null);
+                        webView.evaluateJavascript("document.getElementById('waveAnimation').classList.remove('hidden');", null);
+                        break;
+                    case "PAUSE":
+                        // HTML内のaudio要素を一時停止し、波形アニメーションを非表示
+                        webView.evaluateJavascript("document.getElementById('audioPlayer').pause();", null);
+                        webView.evaluateJavascript("document.getElementById('waveAnimation').classList.add('hidden');", null);
+                        break;
+                    case "STOP":
+                        // HTML内のaudio要素を停止（停止状態＝一時停止＋先頭へ戻す）し、波形アニメーションを非表示
+                        webView.evaluateJavascript("document.getElementById('audioPlayer').pause(); document.getElementById('audioPlayer').currentTime = 0;", null);
+                        webView.evaluateJavascript("document.getElementById('waveAnimation').classList.add('hidden');", null);
+                        break;
+                }
+            }
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setAllowFileAccess(true);
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient() {
-            // ファイル選択（audioファイル）を行う
+            // ファイル選択用（<input type="file">から呼ばれる）
             @Override
             public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
                 MainActivity.this.filePathCallback = filePathCallback;
@@ -49,11 +78,11 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // JavaScriptから呼び出すインターフェースを登録
+        // JavaScriptインターフェースの登録
         webView.addJavascriptInterface(new WebAppInterface(), "Android");
         webView.loadUrl("file:///android_asset/player.html");
 
-        // ファイルピッカーの結果を受け取る
+        // ファイルピッカー結果の処理
         filePickerLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
             if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
                 Uri uri = result.getData().getData();
@@ -68,9 +97,12 @@ public class MainActivity extends AppCompatActivity {
         Intent serviceIntent = new Intent(this, AudioService.class);
         startService(serviceIntent);
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
+
+        // AudioServiceからの再生状態ブロードキャストを受信
+        registerReceiver(audioStateReceiver, new IntentFilter("ACTION_AUDIO_STATE"));
     }
 
-    // JavaScriptから呼び出されるインターフェース
+    // JavaScriptから呼ばれるインターフェース
     private class WebAppInterface {
         @android.webkit.JavascriptInterface
         public void playAudio(String filePath) {
@@ -102,14 +134,13 @@ public class MainActivity extends AppCompatActivity {
             audioService = binder.getService();
             isBound = true;
         }
-
         @Override
         public void onServiceDisconnected(ComponentName name) {
             isBound = false;
         }
     };
 
-    // 戻るボタンを無効化（必要に応じて変更）
+    // 戻るボタン無効（必要に応じて）
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
@@ -118,7 +149,6 @@ public class MainActivity extends AppCompatActivity {
         return super.onKeyDown(keyCode, event);
     }
 
-    // 終了時にサービスのバインドを解除
     @Override
     protected void onDestroy() {
         super.onDestroy();
@@ -126,5 +156,6 @@ public class MainActivity extends AppCompatActivity {
             unbindService(serviceConnection);
             isBound = false;
         }
+        unregisterReceiver(audioStateReceiver);
     }
 }
