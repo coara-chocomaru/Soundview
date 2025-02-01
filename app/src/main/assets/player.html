@@ -17,7 +17,6 @@
             margin: 0;
             color: white;
         }
-
         .player-container {
             text-align: center;
             background: rgba(40, 40, 40, 0.9);
@@ -27,12 +26,10 @@
             width: 100%;
             max-width: 400px;
         }
-
         h1 {
             margin-bottom: 20px;
             font-size: 24px;
         }
-
         button, input[type="file"] {
             padding: 12px 20px;
             font-size: 18px;
@@ -42,29 +39,24 @@
             width: 100%;
             transition: 0.3s;
         }
-
         button {
             background: #6200ea;
             color: white;
             margin: 10px 0;
             box-shadow: 0 4px 10px rgba(98, 0, 234, 0.5);
         }
-
         button:hover {
             background: #7b1fa2;
             box-shadow: 0 6px 12px rgba(123, 31, 162, 0.5);
         }
-
         #stopBtn {
             background: #d32f2f;
             box-shadow: 0 4px 10px rgba(211, 47, 47, 0.5);
         }
-
         #stopBtn:hover {
             background: #b71c1c;
             box-shadow: 0 6px 12px rgba(183, 28, 28, 0.5);
         }
-
         /* 波形アニメーション */
         .wave-container {
             display: flex;
@@ -73,7 +65,6 @@
             margin-top: 20px;
             height: 50px;
         }
-
         .wave {
             width: 8px;
             height: 30px;
@@ -81,23 +72,18 @@
             background: #03dac6;
             animation: wave-animation 1s infinite ease-in-out;
         }
-
         .wave:nth-child(2) {
             animation-delay: 0.2s;
         }
-
         .wave:nth-child(3) {
             animation-delay: 0.4s;
         }
-
         .wave:nth-child(4) {
             animation-delay: 0.6s;
         }
-
         .wave:nth-child(5) {
             animation-delay: 0.8s;
         }
-
         @keyframes wave-animation {
             0%, 100% {
                 height: 20px;
@@ -108,11 +94,9 @@
                 background: #bb86fc;
             }
         }
-
         .hidden {
             display: none;
         }
-
     </style>
 </head>
 <body>
@@ -123,7 +107,6 @@
         <button id="pauseBtn">⏸ Pause</button>
         <button id="stopBtn">⏹ Stop</button>
         <audio id="audioPlayer" controls class="hidden"></audio>
-
         <!-- 波形アニメーション -->
         <div class="wave-container hidden" id="waveAnimation">
             <div class="wave"></div>
@@ -133,7 +116,6 @@
             <div class="wave"></div>
         </div>
     </div>
-
     <script>
         const fileInput = document.getElementById('fileInput');
         const audioPlayer = document.getElementById('audioPlayer');
@@ -141,9 +123,7 @@
         const pauseBtn = document.getElementById('pauseBtn');
         const stopBtn = document.getElementById('stopBtn');
         const waveAnimation = document.getElementById('waveAnimation');
-
         let selectedFile = null;
-
         // ファイル選択時の処理
         fileInput.addEventListener('change', function(event) {
             const file = event.target.files[0];
@@ -155,7 +135,6 @@
                 audioPlayer.pause();
             }
         });
-
         // 再生ボタン
         playBtn.addEventListener('click', function() {
             if (selectedFile) {
@@ -168,7 +147,6 @@
                 alert("Please select an MP3 file first.");
             }
         });
-
         // 一時停止ボタン
         pauseBtn.addEventListener('click', function() {
             audioPlayer.pause();
@@ -177,7 +155,6 @@
                 window.Android.pauseAudio();
             }
         });
-
         // 停止ボタン
         stopBtn.addEventListener('click', function() {
             audioPlayer.pause();
@@ -187,7 +164,6 @@
                 window.Android.stopAudio();
             }
         });
-
         // 再生終了後の処理
         audioPlayer.addEventListener('ended', function() {
             waveAnimation.classList.add('hidden');
