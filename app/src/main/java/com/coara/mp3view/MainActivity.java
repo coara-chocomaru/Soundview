@@ -7,16 +7,16 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.view.KeyEvent;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
+import android.content.ServiceConnection;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import android.view.KeyEvent;
 
 public class MainActivity extends AppCompatActivity {
     private WebView webView;
@@ -30,7 +30,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // WebViewの設定
         webView = findViewById(R.id.webView);
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
@@ -39,7 +38,6 @@ public class MainActivity extends AppCompatActivity {
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
             public boolean onShowFileChooser(WebView webView, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
-                // ファイル選択ダイアログを表示
                 MainActivity.this.filePathCallback = filePathCallback;
                 Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                 intent.addCategory(Intent.CATEGORY_OPENABLE);
@@ -49,11 +47,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // WebViewでHTMLを読み込む
         webView.addJavascriptInterface(new WebAppInterface(), "Android");
         webView.loadUrl("file:///android_asset/player.html");
 
-        // ファイル選択後の処理
         filePickerLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
             if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
                 Uri uri = result.getData().getData();
@@ -64,13 +60,11 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // AudioServiceを開始およびバインド
         Intent serviceIntent = new Intent(this, AudioService.class);
         startService(serviceIntent);
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
     }
 
-    // WebAppInterfaceクラス：JavaScriptから呼び出し可能なメソッド
     private class WebAppInterface {
         @android.webkit.JavascriptInterface
         public void playAudio(String filePath) {
@@ -94,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // AudioServiceとの接続
+    // Make sure you import ServiceConnection
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -109,11 +103,11 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    // 戻るボタンを無効化
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
-            return true;  // 戻るボタンを無効化
+            // Prevent going back
+            return true;
         }
         return super.onKeyDown(keyCode, event);
     }
