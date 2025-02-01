@@ -6,170 +6,83 @@
     <title>MP3 Player</title>
     <style>
         body {
-            font-family: 'Arial', sans-serif;
-            background-color: #1f1f1f;
-            color: #fff;
+            font-family: Arial, sans-serif;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             height: 100vh;
-            margin: 0;
+            background-color: #f4f4f4;
         }
-
         .player-container {
-            background-color: #222;
-            border-radius: 15px;
-            padding: 20px;
-            width: 400px;
             text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-        }
-
-        h1 {
-            font-size: 24px;
-            margin-bottom: 20px;
-            color: #4CAF50;
-        }
-
-        button {
-            padding: 15px 25px;
-            font-size: 18px;
-            background-color: #4CAF50;
-            color: #fff;
-            border: none;
-            border-radius: 50px;
-            cursor: pointer;
-            margin: 10px;
-            transition: all 0.3s ease;
-        }
-
-        button:hover {
-            background-color: #45a049;
-            transform: scale(1.1);
-        }
-
-        button:active {
-            transform: scale(1);
-        }
-
-        audio {
-            width: 100%;
-            margin-top: 20px;
+            background-color: #fff;
+            padding: 20px;
             border-radius: 10px;
-            border: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
-
-        /* アニメーション */
-        .animation {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 100px;
-            height: 100px;
-            background-color: #4CAF50;
-            border-radius: 50%;
-            animation: pulse 1.5s infinite;
-            transform: translate(-50%, -50%);
-            display: none;
-        }
-
-        @keyframes pulse {
-            0% {
-                transform: scale(1);
-                opacity: 1;
-            }
-            50% {
-                transform: scale(1.5);
-                opacity: 0.6;
-            }
-            100% {
-                transform: scale(1);
-                opacity: 1;
-            }
-        }
-
-        input[type="file"] {
-            display: none;
-        }
-
-        .file-label {
+        button, input[type="file"] {
             padding: 10px 20px;
+            font-size: 18px;
             background-color: #4CAF50;
             color: white;
-            border-radius: 50px;
+            border: none;
+            border-radius: 5px;
             cursor: pointer;
-            font-size: 18px;
-            display: inline-block;
-            transition: all 0.3s ease;
+            margin: 10px;
         }
-
-        .file-label:hover {
+        button:hover {
             background-color: #45a049;
+        }
+        #audioPlayer {
+            margin-top: 20px;
+            width: 100%;
         }
     </style>
 </head>
 <body>
     <div class="player-container">
         <h1>MP3 Player</h1>
-
-        <label class="file-label" for="fileInput">Choose MP3</label>
-        <input type="file" id="fileInput" accept="audio/mp3">
-
-        <div class="animation" id="animation"></div>
-
+        <input type="file" id="fileInput" accept="audio/*">
         <button id="playBtn">Play</button>
         <button id="pauseBtn">Pause</button>
         <button id="stopBtn">Stop</button>
-
         <audio id="audioPlayer" controls>
-            <source id="audioSource" src="" type="audio/mp3">
             Your browser does not support the audio element.
         </audio>
     </div>
 
     <script>
+        const fileInput = document.getElementById('fileInput');
         const audioPlayer = document.getElementById('audioPlayer');
         const playBtn = document.getElementById('playBtn');
         const pauseBtn = document.getElementById('pauseBtn');
         const stopBtn = document.getElementById('stopBtn');
-        const animation = document.getElementById('animation');
-        const fileInput = document.getElementById('fileInput');
 
-        let selectedFile = null;
-
-        // ファイル選択
-        fileInput.addEventListener('change', function() {
-            const file = fileInput.files[0];
-            if (file && file.type === 'audio/mp3') {
+        fileInput.addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
                 const fileURL = URL.createObjectURL(file);
                 audioPlayer.src = fileURL;
-                selectedFile = file;
-            } else {
-                alert('Please select a valid MP3 file.');
+                audioPlayer.load();
             }
         });
 
-        // 再生ボタン
         playBtn.addEventListener('click', function() {
-            if (selectedFile) {
+            if (audioPlayer.src) {
                 audioPlayer.play();
-                animation.style.display = 'block'; // アニメーション表示
             } else {
                 alert("Please select an MP3 file first.");
             }
         });
 
-        // 一時停止ボタン
         pauseBtn.addEventListener('click', function() {
             audioPlayer.pause();
-            animation.style.display = 'none'; // アニメーション非表示
         });
 
-        // 停止ボタン
         stopBtn.addEventListener('click', function() {
             audioPlayer.pause();
             audioPlayer.currentTime = 0;
-            animation.style.display = 'none'; // アニメーション非表示
         });
     </script>
 </body>
