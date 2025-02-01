@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // WebViewの設定
+        // WebViewの設定はsetContentView()の後に行う
         webView = findViewById(R.id.webView);
         webView.loadUrl("file:///android_asset/player.html");
         webView.setWebChromeClient(new WebChromeClient());
