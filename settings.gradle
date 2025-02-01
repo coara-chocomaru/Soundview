@@ -14,5 +14,5 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "exec_app"
+rootProject.name = "mp3view"
 include 'app'
