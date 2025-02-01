@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,17 +15,23 @@
             background-color: #f4f4f4;
             margin: 0;
         }
+
         .player-container {
             text-align: center;
             background-color: #fff;
             padding: 20px;
             border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            width: 90%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
             max-width: 400px;
         }
-        button {
-            padding: 12px 20px;
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        button, input[type="file"] {
+            padding: 10px 20px;
             font-size: 18px;
             background-color: #4CAF50;
             color: white;
@@ -33,29 +39,50 @@
             border-radius: 5px;
             cursor: pointer;
             margin: 10px;
-            width: 80%;
+            width: 100%;
         }
+
         button:hover {
             background-color: #45a049;
         }
+
         #audioPlayer {
             margin-top: 20px;
             width: 100%;
         }
-        .hidden {
-            display: none;
+
+        #stopBtn {
+            background-color: #f44336;
         }
+
+        #stopBtn:hover {
+            background-color: #e53935;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            font-size: 18px;
+            margin-top: 10px;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
     </style>
 </head>
 <body>
     <div class="player-container">
         <h1>MP3 Player</h1>
-        <input type="file" id="fileInput" accept="audio/*" class="hidden">
-        <button id="openFile">MP3を選択</button>
-        <button id="playBtn">▶ 再生</button>
-        <button id="pauseBtn">⏸ 一時停止</button>
-        <button id="stopBtn">⏹ 停止</button>
-        <audio id="audioPlayer" controls></audio>
+        <input type="file" id="fileInput" accept="audio/*">
+        <button id="playBtn">Play</button>
+        <button id="pauseBtn">Pause</button>
+        <button id="stopBtn">Stop</button>
+        <audio id="audioPlayer" controls>
+            Your browser does not support the audio element.
+        </audio>
+        <div class="loading" id="loadingIndicator">Loading...</div>
     </div>
 
     <script>
@@ -64,54 +91,52 @@
         const playBtn = document.getElementById('playBtn');
         const pauseBtn = document.getElementById('pauseBtn');
         const stopBtn = document.getElementById('stopBtn');
-        const openFile = document.getElementById('openFile');
+        const loadingIndicator = document.getElementById('loadingIndicator');
 
-        // ファイル選択
-        openFile.addEventListener('click', function() {
-            if (window.Android) {
-                window.Android.openFileChooser(); // Javaのメソッドを呼び出す
-            } else {
-                fileInput.click();
-            }
-        });
+        let selectedFile = null;
 
+        // ファイル選択時の処理
         fileInput.addEventListener('change', function(event) {
             const file = event.target.files[0];
             if (file) {
+                selectedFile = file;
                 const fileURL = URL.createObjectURL(file);
-                setAudioFile(fileURL);
+                audioPlayer.src = fileURL;
+                audioPlayer.load();
+                audioPlayer.pause();
+                loadingIndicator.classList.add('active');
             }
         });
 
-        // Javaから呼び出される関数
-        function setAudioFile(filePath) {
-            audioPlayer.src = filePath;
-            audioPlayer.load();
-        }
-
-        // 再生・停止・一時停止
+        // 再生ボタン
         playBtn.addEventListener('click', function() {
-            if (audioPlayer.src) {
+            if (selectedFile) {
                 audioPlayer.play();
+                loadingIndicator.classList.remove('active');
             } else {
-                alert("MP3ファイルを選択してください");
+                alert("Please select an MP3 file first.");
             }
         });
 
+        // 一時停止ボタン
         pauseBtn.addEventListener('click', function() {
             audioPlayer.pause();
         });
 
+        // 停止ボタン
         stopBtn.addEventListener('click', function() {
             audioPlayer.pause();
             audioPlayer.currentTime = 0;
         });
 
-        // 戻るボタンを封じる
-        window.history.pushState(null, null, location.href);
-        window.onpopstate = function() {
-            window.history.pushState(null, null, location.href);
-        };
+        // 再生終了後の処理
+        audioPlayer.addEventListener('ended', function() {
+            alert('Playback finished.');
+            audioPlayer.currentTime = 0;
+        });
+
+        // HTML5のAudio APIとJavaScriptを利用して音楽を再生
+        // Android側に通知を送信する場合はここでwindow.Android.playAudio(fileURL)などを呼び出す
     </script>
 </body>
 </html>
