@@ -78,7 +78,7 @@ public class AudioService extends Service {
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("MP3 Player")
                 .setContentText(status)
-                .setSmallIcon(R.drawable.ic_music)
+                .setSmallIcon(android.R.drawable.ic_media_play) // システムアイコンに変更
                 .addAction(createAction("Play", "PLAY"))
                 .addAction(createAction("Pause", "PAUSE"))
                 .addAction(createAction("Stop", "STOP"))
@@ -92,7 +92,11 @@ public class AudioService extends Service {
     private NotificationCompat.Action createAction(String title, String action) {
         Intent intent = new Intent("AUDIO_CONTROL");
         intent.putExtra("ACTION", action);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, action.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            flags |= PendingIntent.FLAG_IMMUTABLE;
+        }
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, action.hashCode(), intent, flags);
         return new NotificationCompat.Action(0, title, pendingIntent);
     }
 
@@ -100,7 +104,9 @@ public class AudioService extends Service {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Audio Service", NotificationManager.IMPORTANCE_LOW);
             NotificationManager manager = getSystemService(NotificationManager.class);
-            manager.createNotificationChannel(channel);
+            if (manager != null) {
+                manager.createNotificationChannel(channel);
+            }
         }
     }
 
@@ -111,7 +117,9 @@ public class AudioService extends Service {
             if (action != null) {
                 switch (action) {
                     case "PLAY":
-                        if (currentFile != null) playAudio(currentFile);
+                        if (currentFile != null) {
+                            playAudio(currentFile);
+                        }
                         break;
                     case "PAUSE":
                         pauseAudio();
