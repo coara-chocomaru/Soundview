@@ -7,7 +7,10 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.Settings;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
@@ -27,10 +30,10 @@ import android.view.KeyEvent;
 
 public class MainActivity extends AppCompatActivity {
     private static final int PERMISSIONS_REQUEST_CODE = 100;
-    private static final String[] REQUIRED_PERMISSIONS = new String[]{
+    // Android 11 (API 30) 以降は MANAGE_EXTERNAL_STORAGE のチェックは別扱い
+    private static final String[] LEGACY_PERMISSIONS = new String[]{
             Manifest.permission.READ_EXTERNAL_STORAGE,
-            Manifest.permission.WRITE_EXTERNAL_STORAGE,
-            Manifest.permission.MANAGE_EXTERNAL_STORAGE  // Android 11+ で利用する場合
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
     };
 
     private WebView webView;
@@ -46,20 +49,46 @@ public class MainActivity extends AppCompatActivity {
 
         // 権限チェック
         if (!hasRequiredPermissions()) {
-            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, PERMISSIONS_REQUEST_CODE);
+            requestRequiredPermissions();
         } else {
             initApp();
         }
     }
 
-    // 必要な権限をすべて持っているか確認
+    // 必要な権限を持っているか確認する
     private boolean hasRequiredPermissions() {
-        for (String permission : REQUIRED_PERMISSIONS) {
-            if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+        // Android 11 以降の場合、MANAGE_EXTERNAL_STORAGE のチェックを行う
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!Environment.isExternalStorageManager()) {
                 return false;
+            }
+        } else {
+            // Android 10 以前の場合はレガシーなパーミッションをチェック
+            for (String permission : LEGACY_PERMISSIONS) {
+                if (ContextCompat.checkSelfPermission(this, permission) != PackageManager.PERMISSION_GRANTED) {
+                    return false;
+                }
             }
         }
         return true;
+    }
+
+    // 権限を要求する
+    private void requestRequiredPermissions() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            try {
+                // MANAGE_EXTERNAL_STORAGE 権限を要求するため、設定画面へ遷移させる
+                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                intent.setData(Uri.parse("package:" + getPackageName()));
+                startActivityForResult(intent, PERMISSIONS_REQUEST_CODE);
+            } catch (Exception e) {
+                Intent intent = new Intent(Settings.ACTION_MANAGE_ALL_FILES_ACCESS_PERMISSION);
+                startActivityForResult(intent, PERMISSIONS_REQUEST_CODE);
+            }
+        } else {
+            // Android 10 以前の場合は、レガシーなパーミッションを要求
+            ActivityCompat.requestPermissions(this, LEGACY_PERMISSIONS, PERMISSIONS_REQUEST_CODE);
+        }
     }
 
     // 権限が付与されている場合の初期化処理
@@ -101,41 +130,47 @@ public class MainActivity extends AppCompatActivity {
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
     }
 
-    // ユーザーが権限要求に対する応答
+    // 権限要求の結果を受け取る
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == PERMISSIONS_REQUEST_CODE) {
+            if (hasRequiredPermissions()) {
+                initApp();
+            } else {
+                showPermissionDeniedDialog();
+            }
+        } else {
+            super.onActivityResult(requestCode, resultCode, data);
+        }
+    }
+
+    // onRequestPermissionsResult は Android 10 以下用
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         if (requestCode == PERMISSIONS_REQUEST_CODE) {
-            boolean allGranted = true;
-            if (grantResults.length > 0) {
-                for (int result : grantResults) {
-                    if (result != PackageManager.PERMISSION_GRANTED) {
-                        allGranted = false;
-                        break;
-                    }
-                }
-            } else {
-                allGranted = false;
-            }
-
-            if (allGranted) {
+            if (hasRequiredPermissions()) {
                 initApp();
             } else {
-                // 権限が拒否された場合のアラートダイアログを表示し、アプリを安全に終了
-                new AlertDialog.Builder(this)
-                        .setTitle("権限が拒否されました")
-                        .setMessage("必要な権限が付与されていないため、アプリが正常に動作しません。アプリを終了します。")
-                        .setPositiveButton("終了", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                finish();
-                            }
-                        })
-                        .setCancelable(false)
-                        .show();
+                showPermissionDeniedDialog();
             }
         } else {
             super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         }
+    }
+
+    // 権限が拒否された場合のダイアログ表示と安全な終了
+    private void showPermissionDeniedDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("権限が拒否されました")
+                .setMessage("必要な権限が付与されていないため、アプリが正常に動作しません。アプリを終了します。")
+                .setPositiveButton("終了", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        finish();
+                    }
+                })
+                .setCancelable(false)
+                .show();
     }
 
     private class WebAppInterface {
