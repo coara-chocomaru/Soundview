@@ -15,7 +15,6 @@ import androidx.core.app.NotificationCompat;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
-import android.net.Uri;
 import android.util.Log;
 
 public class AudioService extends Service {
@@ -39,8 +38,7 @@ public class AudioService extends Service {
         Log.d(TAG, "onCreate");
         createNotificationChannel();
         registerReceiver(notificationReceiver, new IntentFilter("AUDIO_CONTROL"));
-        // 初期状態でも通知を表示（STOP状態）
-        updateNotification();
+        updateNotification(); // 初期状態でも通知を表示（STOP状態）
     }
 
     @Override
@@ -103,23 +101,22 @@ public class AudioService extends Service {
     // 通知更新処理
     private void updateNotification() {
         int iconRes;
-        String notificationText;
+        String notificationText = "No track playing";
         String currentTime = "00:00";
         String duration = "00:00";
 
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-            iconRes = R.drawable.ic_playing; // 再生中アイコン
-            notificationText = "Playing: " + currentFile;
+            iconRes = R.drawable.ic_playing;
+            notificationText = "Now playing: " + currentFile;
             currentTime = formatTime(mediaPlayer.getCurrentPosition() / 1000);
             duration = formatTime(mediaPlayer.getDuration() / 1000);
         } else if (playbackStatus.equals("PAUSE")) {
-            iconRes = R.drawable.ic_paused; // 一時停止アイコン
+            iconRes = R.drawable.ic_paused;
             notificationText = "Paused: " + currentFile;
             currentTime = formatTime(mediaPlayer.getCurrentPosition() / 1000);
             duration = formatTime(mediaPlayer.getDuration() / 1000);
         } else {
-            iconRes = R.drawable.ic_stopped; // 停止中アイコン
-            notificationText = "No track playing";
+            iconRes = R.drawable.ic_stopped;
         }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
