@@ -149,9 +149,9 @@ public class AudioService extends Service {
         }
     }
 
-    public void updatePlaybackTime(double time) {
-        // 再生時間を更新し、通知に反映
-        updateNotification();
+    public void updatePlaybackInfo(double currentTime, double duration, String state) {
+        playbackStatus = state;
+        updateNotification(currentTime, duration);
     }
 
     public void seekTo(double time) {
@@ -162,27 +162,30 @@ public class AudioService extends Service {
     }
 
     public void setDuration(double duration) {
-        // 必要に応じて総再生時間を保存または使用
+        // 総再生時間を保存または使用
     }
 
     private void updateNotification() {
+        updateNotification(mediaPlayer == null ? 0 : mediaPlayer.getCurrentPosition() / 1000.0, 
+                           mediaPlayer == null ? 0 : mediaPlayer.getDuration() / 1000.0);
+    }
+
+    private void updateNotification(double currentTime, double duration) {
         int iconRes;
         String notificationText = "No track playing";
-        String currentTime = "00:00";
-        String duration = "00:00";
+        String formattedCurrentTime = formatTime((int) currentTime);
+        String formattedDuration = formatTime((int) duration);
 
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             iconRes = R.drawable.ic_playing;
             notificationText = "Now playing: " + currentFile;
-            currentTime = formatTime(mediaPlayer.getCurrentPosition() / 1000);
-            duration = formatTime(mediaPlayer.getDuration() / 1000);
         } else if (playbackStatus.equals("PAUSE")) {
             iconRes = R.drawable.ic_paused;
             notificationText = "Paused: " + currentFile;
-            currentTime = formatTime(mediaPlayer.getCurrentPosition() / 1000);
-            duration = formatTime(mediaPlayer.getDuration() / 1000);
         } else {
             iconRes = R.drawable.ic_stopped;
+            formattedCurrentTime = "00:00";
+            formattedDuration = "00:00";
         }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
@@ -194,7 +197,7 @@ public class AudioService extends Service {
                 .addAction(createAction("⏹ Stop", "STOP"))
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOngoing(playbackStatus.equals("PLAY"))
-                .setContentText(notificationText + " - " + currentTime + "/" + duration)
+                .setContentText(notificationText + " - " + formattedCurrentTime + "/" + formattedDuration)
                 .setContentIntent(getPendingIntent())
                 .build();
 
