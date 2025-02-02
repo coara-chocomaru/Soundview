@@ -267,6 +267,11 @@
                     break;
             }
         }
+
+        // AudioServiceからの時間更新を受け取る
+        window.updateTimeDisplay = function(timeString) {
+            currentTimeDisplay.textContent = timeString;
+        };
     </script>
 </body>
 </html>
