@@ -19,8 +19,10 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import android.view.KeyEvent;
+import android.util.Log;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
     private WebView webView;
     private ValueCallback<Uri[]> filePathCallback;
     private ActivityResultLauncher<Intent> filePickerLauncher;
@@ -32,18 +34,16 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onReceive(Context context, Intent intent) {
             String state = intent.getStringExtra("state");
+            Log.d(TAG, "Audio state received: " + state);
             if (state != null) {
                 switch (state) {
                     case "PLAY":
-                        // 再生状態の場合は波形アニメーション表示
                         webView.evaluateJavascript("document.getElementById('waveAnimation').classList.remove('hidden');", null);
                         break;
                     case "PAUSE":
-                        // 一時停止状態の場合は波形アニメーション非表示
                         webView.evaluateJavascript("document.getElementById('waveAnimation').classList.add('hidden');", null);
                         break;
                     case "STOP":
-                        // 停止状態の場合は波形アニメーション非表示およびaudioタグの状態リセット
                         webView.evaluateJavascript("document.getElementById('waveAnimation').classList.add('hidden');", null);
                         webView.evaluateJavascript("document.getElementById('audioPlayer').pause(); document.getElementById('audioPlayer').currentTime = 0;", null);
                         break;
@@ -129,10 +129,12 @@ public class MainActivity extends AppCompatActivity {
             AudioService.AudioBinder binder = (AudioService.AudioBinder) service;
             audioService = binder.getService();
             isBound = true;
+            Log.d(TAG, "Service connected");
         }
         @Override
         public void onServiceDisconnected(ComponentName name) {
             isBound = false;
+            Log.d(TAG, "Service disconnected");
         }
     };
 
