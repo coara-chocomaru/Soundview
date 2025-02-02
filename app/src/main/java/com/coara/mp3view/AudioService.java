@@ -12,7 +12,6 @@ import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.os.Build;
 import androidx.core.app.NotificationCompat;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.util.Log;
 
@@ -42,6 +41,20 @@ public class AudioService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return binder;
+    }
+
+    // onStartCommand をオーバーライドして、EXIT アクションを処理する
+    @Override
+    public int onStartCommand(Intent intent, int flags, int startId) {
+        if (intent != null && "EXIT".equals(intent.getAction())) {
+            Log.d(TAG, "EXIT action received, terminating app.");
+            stopAudio();
+            stopSelf();
+            // 強制終了（※推奨される方法ではありませんが、要求に沿っています）
+            System.exit(0);
+            return START_NOT_STICKY;
+        }
+        return super.onStartCommand(intent, flags, startId);
     }
 
     public void playAudio(String filePath) {
@@ -107,8 +120,8 @@ public class AudioService extends Service {
             iconRes = R.drawable.ic_stopped;
         }
 
-        // 通知のボタンや再生時間表示は削除し、
-        // タイトル・本文は常に "Sound Player" を表示する
+        // 通知内のボタンや再生時間表示は削除し、
+        // タイトル・本文は常に "Sound Player" を表示し、右下に EXIT ボタンを追加
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Sound Player")
                 .setSmallIcon(iconRes)
@@ -116,9 +129,18 @@ public class AudioService extends Service {
                 .setOngoing(playbackStatus.equals("PLAY"))
                 .setContentText("Sound Player")
                 .setContentIntent(getPendingIntent())
+                .addAction(createAction("EXIT", "EXIT"))
                 .build();
 
         startForeground(NOTIFICATION_ID, notification);
+    }
+
+    private NotificationCompat.Action createAction(String title, String action) {
+        Intent intent = new Intent(this, AudioService.class);
+        intent.setAction(action);
+        PendingIntent pendingIntent = PendingIntent.getService(this, action.hashCode(),
+                intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        return new NotificationCompat.Action(0, title, pendingIntent);
     }
 
     private PendingIntent getPendingIntent() {
