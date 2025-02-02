@@ -113,6 +113,13 @@
             display: none;
         }
 
+        /* シークバー */
+        #seekBar {
+            width: 100%;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+
     </style>
 </head>
 <body>
@@ -123,6 +130,9 @@
         <button id="pauseBtn">⏸ Pause</button>
         <button id="stopBtn">⏹ Stop</button>
         <audio id="audioPlayer" controls class="hidden"></audio>
+
+        <!-- シークバー -->
+        <input type="range" id="seekBar" value="0" step="0.1" min="0" max="100">
 
         <!-- 波形アニメーション -->
         <div class="wave-container hidden" id="waveAnimation">
@@ -141,6 +151,7 @@
         const pauseBtn = document.getElementById('pauseBtn');
         const stopBtn = document.getElementById('stopBtn');
         const waveAnimation = document.getElementById('waveAnimation');
+        const seekBar = document.getElementById('seekBar');
 
         let selectedFile = null;
 
@@ -161,9 +172,6 @@
             if (selectedFile) {
                 audioPlayer.play();
                 waveAnimation.classList.remove('hidden');
-                if (window.Android) {
-                    window.Android.playAudio(audioPlayer.src);
-                }
             } else {
                 alert("Please select an MP3 file first.");
             }
@@ -173,9 +181,6 @@
         pauseBtn.addEventListener('click', function() {
             audioPlayer.pause();
             waveAnimation.classList.add('hidden');
-            if (window.Android) {
-                window.Android.pauseAudio();
-            }
         });
 
         // 停止ボタン
@@ -183,17 +188,23 @@
             audioPlayer.pause();
             audioPlayer.currentTime = 0;
             waveAnimation.classList.add('hidden');
-            if (window.Android) {
-                window.Android.stopAudio();
-            }
         });
 
         // 再生終了後の処理
         audioPlayer.addEventListener('ended', function() {
             waveAnimation.classList.add('hidden');
-            if (window.Android) {
-                window.Android.stopAudio();
-            }
+        });
+
+        // 再生位置をシークバーに反映
+        audioPlayer.addEventListener('timeupdate', function() {
+            const value = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+            seekBar.value = value;
+        });
+
+        // シークバーを操作して再生位置を変更
+        seekBar.addEventListener('input', function() {
+            const newTime = (seekBar.value / 100) * audioPlayer.duration;
+            audioPlayer.currentTime = newTime;
         });
     </script>
 </body>
