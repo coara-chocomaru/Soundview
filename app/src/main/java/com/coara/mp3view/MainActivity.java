@@ -132,6 +132,13 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @android.webkit.JavascriptInterface
+        public void playAudio() {
+            if (audioService != null && audioService.getCurrentFile() != null) {
+                audioService.playAudio(audioService.getCurrentFile());
+            }
+        }
+
+        @android.webkit.JavascriptInterface
         public void pauseAudio() {
             if (audioService != null) {
                 audioService.pauseAudio();
