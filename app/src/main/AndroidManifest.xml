@@ -10,7 +10,7 @@
     <application
         android:allowBackup="true"
         android:theme="@style/Theme.AppCompat.DayNight"
-        android:label="MP3view"
+        android:label="Soundview"
         android:icon="@drawable/ic_playing"
         android:usesCleartextTraffic="true"
         android:requestLegacyExternalStorage="true">
