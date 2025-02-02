@@ -30,6 +30,11 @@ public class AudioService extends Service {
             return AudioService.this;
         }
     }
+    
+    // 現在再生中のファイルURIを取得するgetter
+    public String getCurrentFile() {
+        return currentFile;
+    }
 
     @Override
     public void onCreate() {
@@ -44,7 +49,7 @@ public class AudioService extends Service {
         return binder;
     }
 
-    // 再生処理（URI文字列で受け取り）
+    // 再生処理（URI文字列を受け取る）
     public void playAudio(String filePath) {
         if (mediaPlayer != null) {
             mediaPlayer.release();
@@ -87,7 +92,7 @@ public class AudioService extends Service {
         }
     }
 
-    // 通知の更新
+    // 通知更新処理
     private void updateNotification() {
         int iconRes;
         switch (playbackStatus) {
@@ -100,6 +105,7 @@ public class AudioService extends Service {
             default:
                 iconRes = R.drawable.ic_stopped;
         }
+
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("MP3 Player")
                 .setContentText(playbackStatus)
@@ -111,6 +117,7 @@ public class AudioService extends Service {
                 .setOngoing(playbackStatus.equals("PLAY"))
                 .setContentIntent(getPendingIntent())
                 .build();
+
         startForeground(NOTIFICATION_ID, notification);
     }
 
@@ -141,14 +148,14 @@ public class AudioService extends Service {
         }
     }
 
-    // 再生状態のブロードキャスト送信（MainActivity側でWebView更新用）
+    // 現在の再生状態をブロードキャスト送信（MainActivity側でWebView更新用）
     private void sendStateBroadcast(String state) {
         Intent intent = new Intent("ACTION_AUDIO_STATE");
         intent.putExtra("state", state);
         sendBroadcast(intent);
     }
 
-    // 通知操作を受け取るブロードキャストレシーバー
+    // 通知操作（PLAY／PAUSE／STOP）を受け取るレシーバー
     private final BroadcastReceiver notificationReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -156,6 +163,7 @@ public class AudioService extends Service {
             if (action != null) {
                 switch (action) {
                     case "PLAY":
+                        // currentFileがない場合は何もしない（MainActivity側で補完する）
                         if (currentFile != null) {
                             playAudio(currentFile);
                         }
