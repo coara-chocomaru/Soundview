@@ -180,8 +180,8 @@
                 audioPlayer.load();
                 audioPlayer.pause();
                 updateDurationDisplay();
-                // ファイル選択を通知
-                window.onFileSelected(fileURL);
+                // ファイル選択を通知（content://スキームのURIに変換はJava側で行う）
+                window.onFileSelected(file);
             }
         });
 
