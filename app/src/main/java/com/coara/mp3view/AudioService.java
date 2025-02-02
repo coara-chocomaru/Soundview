@@ -1,30 +1,33 @@
 package com.coara.mp3view;
 
+import android.app.Service;
+import android.content.Intent;
+import android.media.MediaPlayer;
+import android.os.Binder;
+import android.os.IBinder;
+import android.net.Uri;
 import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.Service;
-import android.content.Intent;
-import android.media.MediaPlayer;
-import android.net.Uri;
-import android.os.Binder;
 import android.os.Build;
-import android.os.IBinder;
 import androidx.core.app.NotificationCompat;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.IntentFilter;
 import android.util.Log;
-import java.io.IOException;
 
 public class AudioService extends Service {
     private static final String TAG = "AudioService";
     private MediaPlayer mediaPlayer;
-    private String currentFile;
     private final IBinder binder = new AudioBinder();
-    private static final String CHANNEL_ID = "MP3PlayerServiceChannel";
+    private static final String CHANNEL_ID = "AudioServiceChannel";
     private static final int NOTIFICATION_ID = 1;
+    private String currentFile = null;
+    private String playbackStatus = "STOP"; // 初期状態はSTOP
 
     public class AudioBinder extends Binder {
-        AudioService getService() {
+        public AudioService getService() {
             return AudioService.this;
         }
     }
@@ -32,8 +35,9 @@ public class AudioService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        mediaPlayer = new MediaPlayer();
+        Log.d(TAG, "onCreate");
         createNotificationChannel();
+        updateNotification(); // 初期状態でも通知を表示（STOP状態）
     }
 
     @Override
@@ -42,75 +46,126 @@ public class AudioService extends Service {
     }
 
     public void playAudio(String filePath) {
+        if (filePath == null || filePath.isEmpty()) {
+            Log.e(TAG, "Invalid file path provided for playback");
+            return;
+        }
+
+        Log.d(TAG, "playAudio: " + filePath);
+
+        if (mediaPlayer != null) {
+            mediaPlayer.release();
+            mediaPlayer = null;
+        }
+
+        mediaPlayer = new MediaPlayer();
         try {
-            if (mediaPlayer.isPlaying()) {
-                mediaPlayer.stop();
-            }
-            mediaPlayer.reset();
-            mediaPlayer.setDataSource(this, Uri.parse(filePath));
+            Uri uri = Uri.parse(filePath);
+            mediaPlayer.setDataSource(getApplicationContext(), uri);
             mediaPlayer.prepare();
             mediaPlayer.start();
-
             currentFile = filePath;
-            startForeground(NOTIFICATION_ID, buildNotification());
-            sendBroadcast("PLAY");
-        } catch (IOException e) {
-            e.printStackTrace();
-            Log.e(TAG, "Error playing audio: " + e.getMessage());
+            playbackStatus = "PLAY";
+            updateNotification();
+            sendStateBroadcast("PLAY");
+        } catch (Exception e) {
+            Log.e(TAG, "Error in playAudio", e);
+            playbackStatus = "STOP";
+            updateNotification();
         }
     }
 
     public void pauseAudio() {
-        if (mediaPlayer.isPlaying()) {
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            Log.d(TAG, "pauseAudio");
             mediaPlayer.pause();
-            sendBroadcast("PAUSE");
+            playbackStatus = "PAUSE";
+            updateNotification();
+            sendStateBroadcast("PAUSE");
         }
     }
 
     public void stopAudio() {
-        mediaPlayer.stop();
-        mediaPlayer.reset();
-        sendBroadcast("STOP");
-        stopForeground(Service.STOP_FOREGROUND_REMOVE);
+        if (mediaPlayer != null) {
+            Log.d(TAG, "stopAudio");
+            mediaPlayer.stop();
+            mediaPlayer.release();
+            mediaPlayer = null;
+            currentFile = null;
+            playbackStatus = "STOP";
+            updateNotification();
+            sendStateBroadcast("STOP");
+        }
     }
 
-    public long getCurrentPosition() {
-        return mediaPlayer.getCurrentPosition();
+    private void updateNotification() {
+        int iconRes;
+        String notificationText = "No track playing";
+        String currentTime = "00:00";
+        String duration = "00:00";
+
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            iconRes = R.drawable.ic_playing;
+            notificationText = "Now playing: " + currentFile;
+            currentTime = formatTime(mediaPlayer.getCurrentPosition() / 1000);
+            duration = formatTime(mediaPlayer.getDuration() / 1000);
+        } else if (playbackStatus.equals("PAUSE")) {
+            iconRes = R.drawable.ic_paused;
+            notificationText = "Paused: " + currentFile;
+            currentTime = formatTime(mediaPlayer.getCurrentPosition() / 1000);
+            duration = formatTime(mediaPlayer.getDuration() / 1000);
+        } else {
+            iconRes = R.drawable.ic_stopped;
+        }
+
+        Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
+                .setContentTitle("MP3 Player")
+                .setContentText(notificationText)
+                .setSmallIcon(iconRes)
+                .addAction(createAction("▶ Play", "PLAY"))
+                .addAction(createAction("⏸ Pause", "PAUSE"))
+                .addAction(createAction("⏹ Stop", "STOP"))
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setOngoing(playbackStatus.equals("PLAY"))
+                .setContentText(notificationText + " - " + currentTime + "/" + duration)
+                .setContentIntent(getPendingIntent())
+                .build();
+
+        startForeground(NOTIFICATION_ID, notification);
     }
 
-    public String getCurrentFile() {
-        return currentFile;
+    private String formatTime(int seconds) {
+        int minutes = seconds / 60;
+        int secs = seconds % 60;
+        return String.format("%02d:%02d", minutes, secs);
+    }
+
+    private NotificationCompat.Action createAction(String title, String action) {
+        Intent intent = new Intent("AUDIO_CONTROL");
+        intent.putExtra("ACTION", action);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, action.hashCode(),
+                intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        return new NotificationCompat.Action(0, title, pendingIntent);
+    }
+
+    private PendingIntent getPendingIntent() {
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        return PendingIntent.getActivity(this, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel serviceChannel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "MP3 Player Channel",
-                    NotificationManager.IMPORTANCE_DEFAULT
-            );
-
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Audio Service", NotificationManager.IMPORTANCE_LOW);
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
-                manager.createNotificationChannel(serviceChannel);
+                manager.createNotificationChannel(channel);
             }
         }
     }
 
-    private Notification buildNotification() {
-        Intent notificationIntent = new Intent(this, MainActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("MP3 Player")
-                .setContentText("Playing Audio")
-                .setSmallIcon(R.drawable.notification_icon)
-                .setContentIntent(pendingIntent)
-                .setOngoing(true)  // 通知を停止しない限り動作し続けるように設定
-                .build();
-    }
-
-    private void sendBroadcast(String state) {
+    private void sendStateBroadcast(String state) {
         Intent intent = new Intent("ACTION_AUDIO_STATE");
         intent.putExtra("state", state);
         sendBroadcast(intent);
@@ -123,5 +178,8 @@ public class AudioService extends Service {
             mediaPlayer.release();
             mediaPlayer = null;
         }
+        stopForeground(true);
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        manager.cancel(NOTIFICATION_ID);
     }
 }
