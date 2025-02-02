@@ -15,15 +15,16 @@ import android.webkit.WebChromeClient.FileChooserParams;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.appcompat.app.AppCompatActivity;
 import android.view.KeyEvent;
 import android.util.Log;
 import android.content.ServiceConnection;
-import androidx.media.session.MediaButtonReceiver;
-import androidx.media.session.MediaSessionCompat;
-import androidx.media.session.PlaybackStateCompat;
+
+import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -99,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
         startService(serviceIntent);
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
 
-        // MediaSessionの初期化
+        // MediaSessionの初期化（v4サポートライブラリのMediaSessionCompatを使用）
         initializeMediaSession();
 
         // AudioServiceからの再生状態ブロードキャスト受信用レシーバー登録（名前空間付きアクション）
