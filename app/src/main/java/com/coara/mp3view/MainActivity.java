@@ -21,10 +21,10 @@ import android.content.ServiceConnection;
 
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+import android.support.v7.app.AppCompatActivity;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -107,7 +107,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void initializeMediaSession() {
         mediaSession = new MediaSessionCompat(this, "MP3Player");
-        // 旧サポートライブラリの MediaSessionCompat のフラグは deprecated ですが、v4 用として設定
+        // ※ 以下のフラグは deprecated ですが、旧サポートライブラリを使用する場合の例です
         mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
         mediaSession.setCallback(new MediaSessionCompat.Callback() {
             @Override
@@ -199,7 +199,6 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
-            // 戻るボタン押下時の処理（ここでは無効化）
             return true;
         }
         return super.onKeyDown(keyCode, event);
