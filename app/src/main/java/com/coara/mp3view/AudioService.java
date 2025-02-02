@@ -253,4 +253,17 @@ public class AudioService extends Service {
         manager.cancel(NOTIFICATION_ID);
         unregisterReceiver(notificationActionReceiver);
     }
+
+    // 追加したメソッド
+    public MediaPlayer getMediaPlayer() {
+        return mediaPlayer;
+    }
+
+    public String getPlaybackStatus() {
+        return playbackStatus;
+    }
+
+    public String getCurrentFile() {
+        return currentFile;
+    }
 }
