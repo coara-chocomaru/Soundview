@@ -11,11 +11,11 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.os.Build;
-import android.util.Log;
+import androidx.core.app.NotificationCompat;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-
-import android.support.v4.app.NotificationCompat;
+import android.content.IntentFilter;
+import android.util.Log;
 
 public class AudioService extends Service {
     private static final String TAG = "AudioService";
@@ -24,7 +24,6 @@ public class AudioService extends Service {
     private static final String CHANNEL_ID = "AudioServiceChannel";
     private static final int NOTIFICATION_ID = 1;
     private String currentFile = null;
-    // playbackStatus は "PLAY", "PAUSE", "STOP" のいずれかで管理
     private String playbackStatus = "STOP";
 
     public class AudioBinder extends Binder {
@@ -36,9 +35,9 @@ public class AudioService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        Log.d(TAG, "onCreate");
+        Log.d(TAG, "AudioService Created");
         createNotificationChannel();
-        updateNotification();
+        registerReceiver(audioControlReceiver, new IntentFilter("AUDIO_CONTROL"));
     }
 
     @Override
@@ -46,57 +45,42 @@ public class AudioService extends Service {
         return binder;
     }
 
-    // 通知や静的ブロードキャストレシーバーからの操作を受けるために onStartCommand を実装
-    @Override
-    public int onStartCommand(Intent intent, int flags, int startId) {
-        if (intent != null && "com.coara.mp3view.ACTION_AUDIO_CONTROL".equals(intent.getAction())) {
-            String command = intent.getStringExtra("ACTION");
-            Log.d(TAG, "Received control command: " + command);
-            if ("PLAY".equals(command)) {
-                if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
-                    resumeAudio();
-                } else if (currentFile != null) {
-                    playAudio(currentFile);
-                }
-            } else if ("PAUSE".equals(command)) {
-                pauseAudio();
-            } else if ("STOP".equals(command)) {
-                stopAudio();
-            }
-        }
-        return START_STICKY;
-    }
-
     public void playAudio(String filePath) {
         if (filePath == null || filePath.isEmpty()) {
-            Log.e(TAG, "Invalid file path provided for playback");
+            Log.e(TAG, "Invalid file path for playback");
             return;
         }
-        Log.d(TAG, "playAudio: " + filePath);
+
         if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;
         }
+
         mediaPlayer = new MediaPlayer();
         try {
             Uri uri = Uri.parse(filePath);
             mediaPlayer.setDataSource(getApplicationContext(), uri);
             mediaPlayer.prepare();
             mediaPlayer.start();
-            currentFile = filePath;
             playbackStatus = "PLAY";
+            currentFile = filePath;
+
+            mediaPlayer.setOnCompletionListener(mp -> {
+                playbackStatus = "STOP";
+                sendStateBroadcast("STOP");
+                updateNotification();
+            });
+
             updateNotification();
             sendStateBroadcast("PLAY");
+
         } catch (Exception e) {
             Log.e(TAG, "Error in playAudio", e);
-            playbackStatus = "STOP";
-            updateNotification();
         }
     }
 
     public void pauseAudio() {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-            Log.d(TAG, "pauseAudio");
             mediaPlayer.pause();
             playbackStatus = "PAUSE";
             updateNotification();
@@ -104,27 +88,25 @@ public class AudioService extends Service {
         }
     }
 
-    public void resumeAudio() {
-        if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
-            Log.d(TAG, "resumeAudio");
-            mediaPlayer.start();
-            playbackStatus = "PLAY";
-            updateNotification();
-            sendStateBroadcast("PLAY");
-        }
-    }
-
     public void stopAudio() {
         if (mediaPlayer != null) {
-            Log.d(TAG, "stopAudio");
             mediaPlayer.stop();
             mediaPlayer.release();
             mediaPlayer = null;
-            currentFile = null;
             playbackStatus = "STOP";
             updateNotification();
             sendStateBroadcast("STOP");
         }
+    }
+
+    private void sendStateBroadcast(String state) {
+        Intent intent = new Intent("ACTION_AUDIO_STATE");
+        intent.putExtra("state", state);
+        if (mediaPlayer != null) {
+            intent.putExtra("currentTime", formatTime(mediaPlayer.getCurrentPosition() / 1000));
+            intent.putExtra("duration", formatTime(mediaPlayer.getDuration() / 1000));
+        }
+        sendBroadcast(intent);
     }
 
     private void updateNotification() {
@@ -134,17 +116,17 @@ public class AudioService extends Service {
         String duration = "00:00";
 
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-            iconRes = R.drawable.ic_playing;  // 再生中アイコンを用意してください
+            iconRes = R.drawable.ic_playing;
             notificationText = "Now playing: " + currentFile;
             currentTime = formatTime(mediaPlayer.getCurrentPosition() / 1000);
             duration = formatTime(mediaPlayer.getDuration() / 1000);
-        } else if ("PAUSE".equals(playbackStatus) && mediaPlayer != null) {
-            iconRes = R.drawable.ic_paused;  // 一時停止中アイコンを用意してください
+        } else if (playbackStatus.equals("PAUSE")) {
+            iconRes = R.drawable.ic_paused;
             notificationText = "Paused: " + currentFile;
             currentTime = formatTime(mediaPlayer.getCurrentPosition() / 1000);
             duration = formatTime(mediaPlayer.getDuration() / 1000);
         } else {
-            iconRes = R.drawable.ic_stopped;  // 停止中アイコンを用意してください
+            iconRes = R.drawable.ic_stopped;
         }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
@@ -155,7 +137,7 @@ public class AudioService extends Service {
                 .addAction(createAction("⏸ Pause", "PAUSE"))
                 .addAction(createAction("⏹ Stop", "STOP"))
                 .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setOngoing("PLAY".equals(playbackStatus))
+                .setOngoing(playbackStatus.equals("PLAY"))
                 .setContentIntent(getPendingIntent())
                 .build();
 
@@ -169,46 +151,49 @@ public class AudioService extends Service {
     }
 
     private NotificationCompat.Action createAction(String title, String action) {
-        Intent intent = new Intent("com.coara.mp3view.ACTION_AUDIO_CONTROL");
+        Intent intent = new Intent("AUDIO_CONTROL");
         intent.putExtra("ACTION", action);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(this, action.hashCode(),
-                intent, PendingIntent.FLAG_UPDATE_CURRENT);
+                intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         return new NotificationCompat.Action(0, title, pendingIntent);
     }
 
     private PendingIntent getPendingIntent() {
         Intent intent = new Intent(this, MainActivity.class);
         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        return PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        return PendingIntent.getActivity(this, 0, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Audio Service", NotificationManager.IMPORTANCE_LOW);
-            NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
                 manager.createNotificationChannel(channel);
             }
         }
     }
 
-    private void sendStateBroadcast(String state) {
-        Intent intent = new Intent("com.coara.mp3view.ACTION_AUDIO_STATE");
-        intent.putExtra("state", state);
-        sendBroadcast(intent);
-    }
-
-    public long getCurrentPosition() {
-        return (mediaPlayer != null) ? mediaPlayer.getCurrentPosition() : 0;
-    }
-
-    public String getCurrentFile() {
-        return currentFile;
-    }
-
-    public boolean isPaused() {
-        return (mediaPlayer != null && !mediaPlayer.isPlaying() && "PAUSE".equals(playbackStatus));
-    }
+    private final BroadcastReceiver audioControlReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getStringExtra("ACTION");
+            if (action != null) {
+                switch (action) {
+                    case "PLAY":
+                        playAudio(currentFile);
+                        break;
+                    case "PAUSE":
+                        pauseAudio();
+                        break;
+                    case "STOP":
+                        stopAudio();
+                        break;
+                }
+            }
+        }
+    };
 
     @Override
     public void onDestroy() {
@@ -217,22 +202,9 @@ public class AudioService extends Service {
             mediaPlayer.release();
             mediaPlayer = null;
         }
-        // stopForeground(boolean) は deprecated ですが、旧実装として使用
+        unregisterReceiver(audioControlReceiver);
         stopForeground(true);
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        if (manager != null) {
-            manager.cancel(NOTIFICATION_ID);
-        }
-    }
-
-    // 静的ブロードキャストレシーバー：通知からの操作を受け取り、AudioService に転送する
-    public static class AudioControlReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Intent serviceIntent = new Intent(context, AudioService.class);
-            serviceIntent.setAction(intent.getAction());
-            serviceIntent.putExtras(intent);
-            context.startService(serviceIntent);
-        }
+        manager.cancel(NOTIFICATION_ID);
     }
 }
