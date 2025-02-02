@@ -20,8 +20,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.view.KeyEvent;
 import android.util.Log;
 import android.content.ServiceConnection;
-import android.support.v4.media.session.MediaSessionCompat;
-import android.support.v4.media.session.PlaybackStateCompat;
+import androidx.media.session.MediaSessionCompat;
+import androidx.media.session.PlaybackStateCompat;
+
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private WebView webView;
@@ -32,7 +33,6 @@ public class MainActivity extends AppCompatActivity {
 
     private MediaSessionCompat mediaSession;
 
-    // AudioServiceからの再生状態ブロードキャストを受信し、WebView内のUI（波形アニメーション等）を更新する
     private final BroadcastReceiver audioStateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -42,14 +42,13 @@ public class MainActivity extends AppCompatActivity {
                 // WebViewを更新するJavaScript呼び出し
                 switch (state) {
                     case "PLAY":
-                        webView.evaluateJavascript("document.getElementById('waveAnimation').classList.remove('hidden');", null);
+                        webView.evaluateJavascript("updateUIFromJava('PLAY');", null);
                         break;
                     case "PAUSE":
-                        webView.evaluateJavascript("document.getElementById('waveAnimation').classList.add('hidden');", null);
+                        webView.evaluateJavascript("updateUIFromJava('PAUSE');", null);
                         break;
                     case "STOP":
-                        webView.evaluateJavascript("document.getElementById('waveAnimation').classList.add('hidden');", null);
-                        webView.evaluateJavascript("document.getElementById('audioPlayer').pause(); document.getElementById('audioPlayer').currentTime = 0;", null);
+                        webView.evaluateJavascript("updateUIFromJava('STOP');", null);
                         break;
                 }
                 updateMediaSessionPlaybackState(state);
@@ -80,7 +79,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // JavaScriptインターフェースの登録（HTML内のボタン操作からAudioServiceを呼び出す）
+        // JavaScriptインターフェースの登録
         webView.addJavascriptInterface(new WebAppInterface(), "Android");
         webView.loadUrl("file:///android_asset/player.html");
 
@@ -128,7 +127,6 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onStop() {
-                // STOP action is not available in the notification, but we keep this for potential use in other contexts
                 if (audioService != null) {
                     audioService.stopAudio();
                 }
