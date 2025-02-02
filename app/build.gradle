@@ -62,4 +62,6 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.webkit:webkit:1.10.0'  // WebViewの最新APIを使う
     implementation 'androidx.core:core:1.8.0'
+    implementation 'androidx.media3:media3-session:1.0.0'
+    implementation 'androidx.media3:media3-common:1.0.0'
 }
