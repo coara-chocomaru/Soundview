@@ -189,7 +189,6 @@
                 audioPlayer.play();
                 waveAnimation.classList.remove('hidden');
                 playBtn.textContent = '⏸ Pause';
-                Android.playAudio(audioPlayer.src); // MainActivityに再生を通知
             } else {
                 alert("Please select an MP3 file first.");
             }
@@ -200,7 +199,6 @@
             audioPlayer.pause();
             waveAnimation.classList.add('hidden');
             playBtn.textContent = '▶ Play';
-            Android.pauseAudio(); // MainActivityに一時停止を通知
         });
 
         // 停止ボタン
@@ -209,14 +207,12 @@
             audioPlayer.currentTime = 0;
             waveAnimation.classList.add('hidden');
             playBtn.textContent = '▶ Play';
-            Android.stopAudio(); // MainActivityに停止を通知
         });
 
         // 再生終了後の処理
         audioPlayer.addEventListener('ended', function() {
             waveAnimation.classList.add('hidden');
             playBtn.textContent = '▶ Play';
-            Android.stopAudio(); // 再生終了後、停止を通知
         });
 
         // 再生時間とシークバーの同期
@@ -254,32 +250,6 @@
                 durationDisplay.textContent = duration;
             }
         }
-
-        // AudioServiceからの再生状態更新を受け取る
-        window.addEventListener('message', function(e) {
-            if (e.data && e.data.state) {
-                updateNotification(e.data.state);
-            }
-        });
-
-        function updateNotification(state) {
-            switch (state) {
-                case 'PLAY':
-                    waveAnimation.classList.remove('hidden');
-                    break;
-                case 'PAUSE':
-                    waveAnimation.classList.add('hidden');
-                    break;
-                case 'STOP':
-                    waveAnimation.classList.add('hidden');
-                    break;
-            }
-        }
-
-        // AudioServiceからの時間更新を受け取る
-        window.updateTimeDisplay = function(timeString) {
-            currentTimeDisplay.textContent = timeString;
-        };
     </script>
 </body>
 </html>
