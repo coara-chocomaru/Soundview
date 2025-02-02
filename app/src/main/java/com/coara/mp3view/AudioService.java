@@ -11,7 +11,7 @@ import android.net.Uri;
 import android.os.Binder;
 import android.os.Build;
 import android.os.IBinder;
-import androidx.core.app.NotificationCompat; // 修正されたインポート
+import androidx.core.app.NotificationCompat;
 import android.util.Log;
 import java.io.IOException;
 
@@ -106,6 +106,7 @@ public class AudioService extends Service {
                 .setContentText("Playing Audio")
                 .setSmallIcon(R.drawable.notification_icon)
                 .setContentIntent(pendingIntent)
+                .setOngoing(true)  // 通知を停止しない限り動作し続けるように設定
                 .build();
     }
 
