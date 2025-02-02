@@ -40,8 +40,7 @@ public class AudioService extends Service {
         super.onCreate();
         Log.d(TAG, "onCreate");
 
-        mediaSession = new MediaSession(this);
-        mediaSession.setPlayer(new Player() {
+        mediaSession = new MediaSession(this, new Player() {
             @Override
             public void play() {
                 playAudio(currentFile != null ? currentFile : "");
@@ -56,8 +55,13 @@ public class AudioService extends Service {
             public void stop() {
                 stopAudio();
             }
+
+            @Override
+            public void setDeviceMuted(boolean muted) {
+                // Implement if needed, or leave empty
+            }
         });
-        mediaSession.setActive(true);
+        mediaSession.setActive(mediaSession.getPlayer());
 
         createNotificationChannel();
     }
@@ -200,7 +204,7 @@ public class AudioService extends Service {
             mediaPlayer.release();
             mediaPlayer = null;
         }
-        stopForeground(true);
+        stopForeground(STOP_FOREGROUND_REMOVE);
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         manager.cancel(NOTIFICATION_ID);
         mediaSession.release();
