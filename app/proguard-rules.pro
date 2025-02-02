@@ -14,7 +14,8 @@
 -keep class com.coara.mp3view.MainActivity {
     public static void main(java.lang.String[]);
 }
-
+-keep class android.support.v4.media.session.** { *; }
+-keep class androidx.media.session.** { *; }
 # Keep annotations
 -keepattributes *Annotation*
 
