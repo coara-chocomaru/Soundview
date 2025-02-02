@@ -1,4 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
     <!-- 必要なパーミッション -->
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
@@ -29,16 +31,36 @@
         <service
             android:name=".AudioService"
             android:exported="true"
-            android:permission="android.permission.BIND_JOB_SERVICE"
             android:foregroundServiceType="mediaPlayback">
-            <!-- インテントフィルター: サービスを起動するためのフィルター -->
+            <!-- 
+                `android:permission="android.permission.BIND_JOB_SERVICE"` は通常ジョブサービスに使われます。
+                ここでは必要ないので削除します。 
+            -->
             <intent-filter>
-                <action android:name="com.coara.mp3view.ACTION_PLAY_AUDIO" />
-                <action android:name="com.coara.mp3view.ACTION_PAUSE_AUDIO" />
-                <action android:name="com.coara.mp3view.ACTION_STOP_AUDIO" />
+                <action android:name="com.coara.mp3view.AudioService" />
             </intent-filter>
         </service>
         
+        <!-- AudioServiceからの制御用ブロードキャストレシーバー -->
+        <receiver
+            android:name=".AudioService$AudioControlReceiver"
+            android:enabled="true"
+            android:exported="false" >
+            <intent-filter>
+                <action android:name="AUDIO_CONTROL" />
+            </intent-filter>
+        </receiver>
+
+        <!-- AudioServiceからの状態更新用ブロードキャストレシーバー -->
+        <receiver
+            android:name=".MainActivity$AudioStateReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="ACTION_AUDIO_STATE" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>
