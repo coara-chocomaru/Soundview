@@ -14,7 +14,6 @@ import android.webkit.WebChromeClient;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.content.ServiceConnection;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
@@ -36,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
             String state = intent.getStringExtra("state");
             Log.d(TAG, "Audio state received: " + state);
             if (state != null) {
+                // WebViewを更新するJavaScript呼び出し
                 switch (state) {
                     case "PLAY":
                         webView.evaluateJavascript("document.getElementById('waveAnimation').classList.remove('hidden');", null);
@@ -64,7 +64,6 @@ public class MainActivity extends AppCompatActivity {
         webSettings.setAllowFileAccess(true);
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient() {
-            // <input type="file"> のファイル選択に対応
             @Override
             public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
                 MainActivity.this.filePathCallback = filePathCallback;
@@ -108,12 +107,14 @@ public class MainActivity extends AppCompatActivity {
                 audioService.playAudio(filePath);
             }
         }
+
         @android.webkit.JavascriptInterface
         public void pauseAudio() {
             if (audioService != null) {
                 audioService.pauseAudio();
             }
         }
+
         @android.webkit.JavascriptInterface
         public void stopAudio() {
             if (audioService != null) {
@@ -131,6 +132,7 @@ public class MainActivity extends AppCompatActivity {
             isBound = true;
             Log.d(TAG, "Service connected");
         }
+
         @Override
         public void onServiceDisconnected(ComponentName name) {
             isBound = false;
