@@ -6,10 +6,9 @@
 </head>
 <body>
     <script>
-        // ファイル選択時の処理（外部から呼び出す）
+        // ファイル選択通知用の関数
         function onFileSelected(filePath) {
-            Android.playAudio(filePath); // ファイルが選択されたらすぐに再生を開始
-            Android.setDuration(0); // 総再生時間の初期化
+            Android.onFileSelected(filePath);
         }
 
         // 再生情報の更新を通知
@@ -21,7 +20,7 @@
         function updateNotification(state) {
             switch (state) {
                 case 'PLAY':
-                    Android.playAudio(); // 再生中のファイルを再生
+                    Android.playAudio();
                     break;
                 case 'PAUSE':
                     Android.pauseAudio();
@@ -30,14 +29,13 @@
                     Android.stopAudio();
                     break;
             }
-            // 状態に応じた通知の更新
             Android.updatePlaybackInfo(getCurrentTime(), getDuration(), state);
         }
 
         // シークバーの更新を通知
         function seekTo(newTime) {
             Android.seekTo(newTime);
-            Android.updatePlaybackInfo(newTime, getDuration(), 'PLAY'); // シーク後に再生状態とする
+            Android.updatePlaybackInfo(newTime, getDuration(), 'PLAY');
         }
 
         // 再生時間を取得
@@ -53,7 +51,6 @@
         // 再生時間を更新
         function updateTimeDisplay(timeString) {
             document.getElementById('currentTime').textContent = timeString;
-            // 時間更新を通知
             Android.updatePlaybackInfo(parseFloat(timeString), getDuration(), 'PLAY');
         }
 
@@ -70,7 +67,7 @@
             Android.setDuration(duration);
         }
 
-        // 以下の関数は、player.htmlから呼び出されることを想定
+        // これらの関数は、player.htmlから呼び出されることを想定
         window.onFileSelected = onFileSelected;
         window.updateNotification = updateNotification;
         window.seekTo = seekTo;
