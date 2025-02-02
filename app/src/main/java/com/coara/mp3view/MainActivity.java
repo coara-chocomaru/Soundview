@@ -42,17 +42,13 @@ public class MainActivity extends AppCompatActivity {
             String state = intent.getStringExtra("state");
             Log.d(TAG, "Audio state received: " + state);
             if (state != null) {
-                switch (state) {
-                    case "PLAY":
-                        webView.evaluateJavascript("document.getElementById('waveAnimation').classList.remove('hidden');", null);
-                        break;
-                    case "PAUSE":
-                        webView.evaluateJavascript("document.getElementById('waveAnimation').classList.add('hidden');", null);
-                        break;
-                    case "STOP":
-                        webView.evaluateJavascript("document.getElementById('waveAnimation').classList.add('hidden');", null);
-                        webView.evaluateJavascript("document.getElementById('audioPlayer').pause(); document.getElementById('audioPlayer').currentTime = 0;", null);
-                        break;
+                if ("PLAY".equals(state)) {
+                    webView.evaluateJavascript("document.getElementById('waveAnimation').classList.remove('hidden');", null);
+                } else if ("PAUSE".equals(state)) {
+                    webView.evaluateJavascript("document.getElementById('waveAnimation').classList.add('hidden');", null);
+                } else if ("STOP".equals(state)) {
+                    webView.evaluateJavascript("document.getElementById('waveAnimation').classList.add('hidden');", null);
+                    webView.evaluateJavascript("document.getElementById('audioPlayer').pause(); document.getElementById('audioPlayer').currentTime = 0;", null);
                 }
                 updateMediaSessionPlaybackState(state);
             }
@@ -62,10 +58,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main);  // activity_main.xml を用意してください
 
-        // WebViewの設定
-        webView = findViewById(R.id.webView);
+        // WebView の設定
+        webView = findViewById(R.id.webView);  // layout に WebView (id:webView) を配置してください
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setAllowFileAccess(true);
@@ -81,7 +77,9 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
+        // JavaScriptインターフェースの登録（HTML側から Android メソッドを呼び出せるようにする）
         webView.addJavascriptInterface(new WebAppInterface(), "Android");
+        // assets/player.html を用意しておくか、適切なURLに変更してください
         webView.loadUrl("file:///android_asset/player.html");
 
         // ファイルピッカー結果の処理
@@ -95,20 +93,21 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // AudioServiceの開始とバインド
+        // AudioService の開始とバインド
         Intent serviceIntent = new Intent(this, AudioService.class);
         startService(serviceIntent);
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
 
-        // MediaSessionの初期化（v4サポートライブラリのMediaSessionCompatを使用）
+        // MediaSession の初期化（旧 v4 サポートライブラリの MediaSessionCompat を使用）
         initializeMediaSession();
 
-        // AudioServiceからの再生状態ブロードキャスト受信用レシーバー登録（名前空間付きアクション）
+        // AudioService からの再生状態ブロードキャスト受信用レシーバー登録（名前空間付きアクション）
         registerReceiver(audioStateReceiver, new IntentFilter("com.coara.mp3view.ACTION_AUDIO_STATE"));
     }
 
     private void initializeMediaSession() {
         mediaSession = new MediaSessionCompat(this, "MP3Player");
+        // 旧サポートライブラリの MediaSessionCompat のフラグは deprecated ですが、v4 用として設定
         mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
         mediaSession.setCallback(new MediaSessionCompat.Callback() {
             @Override
@@ -141,18 +140,14 @@ public class MainActivity extends AppCompatActivity {
         if (mediaSession == null) return;
         long position = 0;
         int stateCode = PlaybackStateCompat.STATE_STOPPED;
-        switch (state) {
-            case "PLAY":
-                stateCode = PlaybackStateCompat.STATE_PLAYING;
-                position = audioService != null ? audioService.getCurrentPosition() : 0;
-                break;
-            case "PAUSE":
-                stateCode = PlaybackStateCompat.STATE_PAUSED;
-                position = audioService != null ? audioService.getCurrentPosition() : 0;
-                break;
-            case "STOP":
-                stateCode = PlaybackStateCompat.STATE_STOPPED;
-                break;
+        if ("PLAY".equals(state)) {
+            stateCode = PlaybackStateCompat.STATE_PLAYING;
+            position = (audioService != null) ? audioService.getCurrentPosition() : 0;
+        } else if ("PAUSE".equals(state)) {
+            stateCode = PlaybackStateCompat.STATE_PAUSED;
+            position = (audioService != null) ? audioService.getCurrentPosition() : 0;
+        } else if ("STOP".equals(state)) {
+            stateCode = PlaybackStateCompat.STATE_STOPPED;
         }
         PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder()
                 .setActions(PlaybackStateCompat.ACTION_PLAY |
@@ -162,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
         mediaSession.setPlaybackState(stateBuilder.build());
     }
 
-    // JavaScriptから呼ばれるインターフェース
+    // JavaScript から呼ばれるインターフェース
     private class WebAppInterface {
         @android.webkit.JavascriptInterface
         public void playAudio(String filePath) {
@@ -184,26 +179,27 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // AudioServiceとの接続管理
+    // AudioService との接続管理
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             AudioService.AudioBinder binder = (AudioService.AudioBinder) service;
             audioService = binder.getService();
             isBound = true;
-            Log.d(TAG, "Service connected");
+            Log.d(TAG, "AudioService connected");
         }
         @Override
         public void onServiceDisconnected(ComponentName name) {
             isBound = false;
-            Log.d(TAG, "Service disconnected");
+            Log.d(TAG, "AudioService disconnected");
         }
     };
 
-    // 戻るキーの無効化（必要に応じて）
+    // 戻るキーの無効化（必要に応じて実装）
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
+            // 戻るボタン押下時の処理（ここでは無効化）
             return true;
         }
         return super.onKeyDown(keyCode, event);
