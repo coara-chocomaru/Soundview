@@ -15,8 +15,10 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
 import android.net.Uri;
+import android.util.Log;
 
 public class AudioService extends Service {
+    private static final String TAG = "AudioService";
     private MediaPlayer mediaPlayer;
     private final IBinder binder = new AudioBinder();
     private static final String CHANNEL_ID = "AudioServiceChannel";
@@ -39,8 +41,10 @@ public class AudioService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        Log.d(TAG, "onCreate");
         createNotificationChannel();
         registerReceiver(notificationReceiver, new IntentFilter("AUDIO_CONTROL"));
+        // 初期状態でも通知を表示（STOP状態）
         updateNotification();
     }
 
@@ -52,7 +56,7 @@ public class AudioService extends Service {
     // 再生処理（URI文字列を受け取る）
     public void playAudio(String filePath) {
         if (filePath == null || filePath.isEmpty()) return;
-        // 既に再生中のメディアがあれば解放
+        Log.d(TAG, "playAudio: " + filePath);
         if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;
@@ -69,12 +73,14 @@ public class AudioService extends Service {
             sendStateBroadcast("PLAY");
         } catch (Exception e) {
             e.printStackTrace();
+            Log.e(TAG, "Error in playAudio", e);
         }
     }
 
     // 一時停止処理
     public void pauseAudio() {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            Log.d(TAG, "pauseAudio");
             mediaPlayer.pause();
             playbackStatus = "PAUSE";
             updateNotification();
@@ -85,6 +91,7 @@ public class AudioService extends Service {
     // 停止処理
     public void stopAudio() {
         if (mediaPlayer != null) {
+            Log.d(TAG, "stopAudio");
             mediaPlayer.stop();
             mediaPlayer.release();
             mediaPlayer = null;
@@ -100,13 +107,14 @@ public class AudioService extends Service {
         int iconRes;
         switch (playbackStatus) {
             case "PLAY":
-                iconRes = R.drawable.ic_playing;
+                // システムアイコンを利用
+                iconRes = android.R.drawable.ic_media_play;
                 break;
             case "PAUSE":
-                iconRes = R.drawable.ic_paused;
+                iconRes = android.R.drawable.ic_media_pause;
                 break;
             default:
-                iconRes = R.drawable.ic_stopped;
+                iconRes = android.R.drawable.ic_media_stop;
         }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
@@ -121,7 +129,9 @@ public class AudioService extends Service {
                 .setContentIntent(getPendingIntent())
                 .build();
 
+        // フォアグラウンドサービスとして通知を開始
         startForeground(NOTIFICATION_ID, notification);
+        Log.d(TAG, "Notification updated: " + playbackStatus);
     }
 
     // 通知用アクションボタンの生成
@@ -147,6 +157,9 @@ public class AudioService extends Service {
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
                 manager.createNotificationChannel(channel);
+                Log.d(TAG, "Notification channel created");
+            } else {
+                Log.e(TAG, "NotificationManager is null");
             }
         }
     }
@@ -156,6 +169,7 @@ public class AudioService extends Service {
         Intent intent = new Intent("ACTION_AUDIO_STATE");
         intent.putExtra("state", state);
         sendBroadcast(intent);
+        Log.d(TAG, "Broadcast sent: " + state);
     }
 
     // 通知操作（PLAY／PAUSE／STOP）を受け取るレシーバー
@@ -163,6 +177,7 @@ public class AudioService extends Service {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getStringExtra("ACTION");
+            Log.d(TAG, "Received notification action: " + action);
             if (action != null) {
                 switch (action) {
                     case "PLAY":
@@ -189,5 +204,6 @@ public class AudioService extends Service {
             mediaPlayer.release();
             mediaPlayer = null;
         }
+        Log.d(TAG, "Service destroyed");
     }
 }
