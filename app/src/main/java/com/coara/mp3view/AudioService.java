@@ -108,13 +108,13 @@ public class AudioService extends Service {
         switch (playbackStatus) {
             case "PLAY":
 
-                iconRes = android.R.drawable.ic_playing;
+                iconRes = R.drawable.ic_playing;
                 break;
             case "PAUSE":
-                iconRes = android.R.drawable.ic_paused;
+                iconRes = R.drawable.ic_paused;
                 break;
             default:
-                iconRes = android.R.drawable.ic_stopped;
+                iconRes = R.drawable.ic_stopped;
         }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
