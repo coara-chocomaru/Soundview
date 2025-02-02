@@ -4,6 +4,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.IBinder;
 import android.net.Uri;
 import android.app.Notification;
@@ -25,8 +26,8 @@ public class AudioService extends Service {
     private static final int NOTIFICATION_ID = 1;
     private String currentFile = null;
     private String playbackStatus = "STOP";
+    private Handler handler = new Handler();
 
-    // 通知からの操作を処理するBroadcastReceiver
     private final BroadcastReceiver notificationActionReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -68,10 +69,10 @@ public class AudioService extends Service {
     public void onCreate() {
         super.onCreate();
         Log.d(TAG, "onCreate");
-        createNotificationChannel(); // 通知チャンネルを作成
-        updateNotification(); // サービス開始時に通知を表示
+        createNotificationChannel();
+        updateNotification();
         IntentFilter filter = new IntentFilter("AUDIO_CONTROL");
-        registerReceiver(notificationActionReceiver, filter); // 通知からの操作を処理するレシーバを登録
+        registerReceiver(notificationActionReceiver, filter);
     }
 
     @Override
@@ -102,11 +103,38 @@ public class AudioService extends Service {
             playbackStatus = "PLAY";
             updateNotification();
             sendStateBroadcast("PLAY");
+            
+            mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                @Override
+                public void onCompletion(MediaPlayer mp) {
+                    sendStateBroadcast("STOP");
+                    updateNotification();
+                }
+            });
+
+            handler.postDelayed(updateTimeTask, 1000);
         } catch (Exception e) {
             Log.e(TAG, "Error in playAudio", e);
             playbackStatus = "STOP";
             updateNotification();
         }
+    }
+
+    private Runnable updateTimeTask = new Runnable() {
+        @Override
+        public void run() {
+            if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+                int currentPosition = mediaPlayer.getCurrentPosition();
+                sendTimeUpdate(currentPosition);
+            }
+            handler.postDelayed(this, 1000);
+        }
+    };
+
+    private void sendTimeUpdate(int position) {
+        Intent intent = new Intent("ACTION_TIME_UPDATE");
+        intent.putExtra("position", position);
+        sendBroadcast(intent);
     }
 
     public void pauseAudio() {
@@ -129,6 +157,7 @@ public class AudioService extends Service {
             playbackStatus = "STOP";
             updateNotification();
             sendStateBroadcast("STOP");
+            handler.removeCallbacks(updateTimeTask);
         }
     }
 
@@ -215,7 +244,7 @@ public class AudioService extends Service {
         stopForeground(Service.STOP_FOREGROUND_REMOVE);
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         manager.cancel(NOTIFICATION_ID);
-        // レシーバを解除
         unregisterReceiver(notificationActionReceiver);
+        handler.removeCallbacks(updateTimeTask);
     }
 }
