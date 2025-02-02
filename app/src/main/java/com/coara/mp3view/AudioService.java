@@ -18,7 +18,6 @@ import android.content.IntentFilter;
 import android.util.Log;
 import android.content.ServiceConnection;
 
-
 public class AudioService extends Service {
     private static final String TAG = "AudioService";
     private MediaPlayer mediaPlayer;
@@ -49,7 +48,11 @@ public class AudioService extends Service {
     }
 
     public void playAudio(String filePath) {
-        if (filePath == null || filePath.isEmpty()) return;
+        if (filePath == null || filePath.isEmpty()) {
+            Log.e(TAG, "Invalid file path provided for playback");
+            return;
+        }
+
         Log.d(TAG, "playAudio: " + filePath);
 
         if (mediaPlayer != null) {
@@ -68,8 +71,9 @@ public class AudioService extends Service {
             updateNotification();
             sendStateBroadcast("PLAY");
         } catch (Exception e) {
-            e.printStackTrace();
             Log.e(TAG, "Error in playAudio", e);
+            playbackStatus = "STOP";
+            updateNotification();
         }
     }
 
@@ -125,6 +129,7 @@ public class AudioService extends Service {
                 .addAction(createAction("⏹ Stop", "STOP"))
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOngoing(playbackStatus.equals("PLAY"))
+                .setContentText(notificationText + " - " + currentTime + "/" + duration)
                 .setContentIntent(getPendingIntent())
                 .build();
 
@@ -197,5 +202,8 @@ public class AudioService extends Service {
             mediaPlayer.release();
             mediaPlayer = null;
         }
+        stopForeground(true);
+        NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        manager.cancel(NOTIFICATION_ID);
     }
 }
