@@ -119,7 +119,7 @@ public class AudioService extends Service {
         }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("MP3 Player")
+                .setContentTitle("Sound Player")
                 .setContentText(notificationText)
                 .setSmallIcon(iconRes)
                 .addAction(createAction("▶ Play", "PLAY"))
