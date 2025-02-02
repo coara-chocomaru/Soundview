@@ -27,7 +27,8 @@ public class AudioService extends Service {
     private String playbackStatus = "STOP";
 
     public class AudioBinder extends Binder {
-        AudioService getService() {
+        // Serviceのインスタンスを取得するためのBinderクラス
+        public AudioService getService() {
             return AudioService.this;
         }
     }
@@ -36,8 +37,8 @@ public class AudioService extends Service {
     public void onCreate() {
         super.onCreate();
         Log.d(TAG, "onCreate");
-        createNotificationChannel();
-        updateNotification();
+        createNotificationChannel(); // 通知チャンネルを作成
+        updateNotification(); // 初期状態でも通知を表示（STOP状態）
     }
 
     @Override
@@ -47,7 +48,7 @@ public class AudioService extends Service {
 
     public void playAudio(String filePath) {
         if (filePath == null || filePath.isEmpty()) {
-            Log.e(TAG, "Invalid file path provided for playback");
+            Log.e(TAG, "再生するためのファイルパスが無効です");
             return;
         }
 
@@ -69,7 +70,7 @@ public class AudioService extends Service {
             updateNotification();
             sendStateBroadcast("PLAY");
         } catch (Exception e) {
-            Log.e(TAG, "Error in playAudio", e);
+            Log.e(TAG, "playAudioでエラーが発生しました", e);
             playbackStatus = "STOP";
             updateNotification();
         }
@@ -100,18 +101,18 @@ public class AudioService extends Service {
 
     private void updateNotification() {
         int iconRes;
-        String notificationText = "No track playing";
+        String notificationText = "再生中のトラックなし";
         String currentTime = "00:00";
         String duration = "00:00";
 
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             iconRes = R.drawable.ic_playing;
-            notificationText = "Now playing: " + currentFile;
+            notificationText = "再生中: " + currentFile;
             currentTime = formatTime(mediaPlayer.getCurrentPosition() / 1000);
             duration = formatTime(mediaPlayer.getDuration() / 1000);
         } else if (playbackStatus.equals("PAUSE")) {
             iconRes = R.drawable.ic_paused;
-            notificationText = "Paused: " + currentFile;
+            notificationText = "一時停止: " + currentFile;
             currentTime = formatTime(mediaPlayer.getCurrentPosition() / 1000);
             duration = formatTime(mediaPlayer.getDuration() / 1000);
         } else {
@@ -119,12 +120,12 @@ public class AudioService extends Service {
         }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("MP3 Player")
+                .setContentTitle("MP3 プレーヤー")
                 .setContentText(notificationText)
                 .setSmallIcon(iconRes)
-                .addAction(createAction("▶ Play", "PLAY"))
-                .addAction(createAction("⏸ Pause", "PAUSE"))
-                .addAction(createAction("⏹ Stop", "STOP"))
+                .addAction(createAction("▶ 再生", "PLAY"))
+                .addAction(createAction("⏸ 一時停止", "PAUSE"))
+                .addAction(createAction("⏹ 停止", "STOP"))
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOngoing(playbackStatus.equals("PLAY"))
                 .setContentText(notificationText + " - " + currentTime + "/" + duration)
@@ -157,7 +158,7 @@ public class AudioService extends Service {
 
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Audio Service", NotificationManager.IMPORTANCE_LOW);
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "オーディオサービス", NotificationManager.IMPORTANCE_LOW);
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
                 manager.createNotificationChannel(channel);
@@ -178,7 +179,8 @@ public class AudioService extends Service {
             mediaPlayer.release();
             mediaPlayer = null;
         }
-        stopForeground(true);
+        // 非推奨メソッドの代わりに新しいメソッドを使用
+        stopForeground(Service.STOP_FOREGROUND_REMOVE);
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         manager.cancel(NOTIFICATION_ID);
     }
