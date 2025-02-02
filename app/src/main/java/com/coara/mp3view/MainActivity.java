@@ -11,6 +11,7 @@ import android.os.IBinder;
 import android.net.Uri;
 import android.webkit.ValueCallback;
 import android.webkit.WebChromeClient;
+import android.webkit.WebChromeClient.FileChooserParams;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -20,8 +21,9 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.view.KeyEvent;
 import android.util.Log;
 import android.content.ServiceConnection;
-import android.support.v4.media.session.MediaSessionCompat;
-import android.support.v4.media.session.PlaybackStateCompat;
+import androidx.media.session.MediaButtonReceiver;
+import androidx.media.session.MediaSessionCompat;
+import androidx.media.session.PlaybackStateCompat;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -30,17 +32,15 @@ public class MainActivity extends AppCompatActivity {
     private ActivityResultLauncher<Intent> filePickerLauncher;
     private AudioService audioService;
     private boolean isBound = false;
-
     private MediaSessionCompat mediaSession;
 
-    // AudioServiceからの再生状態ブロードキャストを受信し、WebView内のUI（波形アニメーション等）を更新する
+    // AudioServiceからの再生状態ブロードキャスト（名前空間付きアクション）を受信し、WebView内のUI更新を行う
     private final BroadcastReceiver audioStateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String state = intent.getStringExtra("state");
             Log.d(TAG, "Audio state received: " + state);
             if (state != null) {
-                // WebViewを更新するJavaScript呼び出し
                 switch (state) {
                     case "PLAY":
                         webView.evaluateJavascript("document.getElementById('waveAnimation').classList.remove('hidden');", null);
@@ -80,8 +80,6 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
-
-        // JavaScriptインターフェースの登録（HTML内のボタン操作からAudioServiceを呼び出す）
         webView.addJavascriptInterface(new WebAppInterface(), "Android");
         webView.loadUrl("file:///android_asset/player.html");
 
@@ -104,29 +102,30 @@ public class MainActivity extends AppCompatActivity {
         // MediaSessionの初期化
         initializeMediaSession();
 
-        // AudioServiceからの再生状態ブロードキャスト受信用レシーバー登録
-        registerReceiver(audioStateReceiver, new IntentFilter("ACTION_AUDIO_STATE"));
+        // AudioServiceからの再生状態ブロードキャスト受信用レシーバー登録（名前空間付きアクション）
+        registerReceiver(audioStateReceiver, new IntentFilter("com.coara.mp3view.ACTION_AUDIO_STATE"));
     }
 
     private void initializeMediaSession() {
         mediaSession = new MediaSessionCompat(this, "MP3Player");
         mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
-        
         mediaSession.setCallback(new MediaSessionCompat.Callback() {
             @Override
             public void onPlay() {
                 if (audioService != null) {
-                    audioService.playAudio(audioService.getCurrentFile());
+                    if (audioService.isPaused()) {
+                        audioService.resumeAudio();
+                    } else if (audioService.getCurrentFile() != null) {
+                        audioService.playAudio(audioService.getCurrentFile());
+                    }
                 }
             }
-
             @Override
             public void onPause() {
                 if (audioService != null) {
                     audioService.pauseAudio();
                 }
             }
-
             @Override
             public void onStop() {
                 if (audioService != null) {
@@ -134,13 +133,11 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-
         mediaSession.setActive(true);
     }
 
     private void updateMediaSessionPlaybackState(String state) {
         if (mediaSession == null) return;
-
         long position = 0;
         int stateCode = PlaybackStateCompat.STATE_STOPPED;
         switch (state) {
@@ -156,10 +153,9 @@ public class MainActivity extends AppCompatActivity {
                 stateCode = PlaybackStateCompat.STATE_STOPPED;
                 break;
         }
-
         PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder()
-                .setActions(PlaybackStateCompat.ACTION_PLAY | 
-                            PlaybackStateCompat.ACTION_PAUSE | 
+                .setActions(PlaybackStateCompat.ACTION_PLAY |
+                            PlaybackStateCompat.ACTION_PAUSE |
                             PlaybackStateCompat.ACTION_STOP)
                 .setState(stateCode, position, 1.0f);
         mediaSession.setPlaybackState(stateBuilder.build());
@@ -173,14 +169,12 @@ public class MainActivity extends AppCompatActivity {
                 audioService.playAudio(filePath);
             }
         }
-
         @android.webkit.JavascriptInterface
         public void pauseAudio() {
             if (audioService != null) {
                 audioService.pauseAudio();
             }
         }
-
         @android.webkit.JavascriptInterface
         public void stopAudio() {
             if (audioService != null) {
@@ -198,7 +192,6 @@ public class MainActivity extends AppCompatActivity {
             isBound = true;
             Log.d(TAG, "Service connected");
         }
-
         @Override
         public void onServiceDisconnected(ComponentName name) {
             isBound = false;
