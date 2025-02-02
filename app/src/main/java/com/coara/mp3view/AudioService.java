@@ -17,7 +17,6 @@ import android.content.IntentFilter;
 import android.net.Uri;
 import android.util.Log;
 
-
 public class AudioService extends Service {
     private static final String TAG = "AudioService";
     private MediaPlayer mediaPlayer;
@@ -103,20 +102,24 @@ public class AudioService extends Service {
     // 通知更新処理
     private void updateNotification() {
         int iconRes;
+        String notificationText;
         switch (playbackStatus) {
             case "PLAY":
                 iconRes = R.drawable.ic_playing; // 再生中アイコン
+                notificationText = "Now playing: " + currentFile;
                 break;
             case "PAUSE":
                 iconRes = R.drawable.ic_paused; // 一時停止アイコン
+                notificationText = "Paused: " + currentFile;
                 break;
             default:
                 iconRes = R.drawable.ic_stopped; // 停止中アイコン
+                notificationText = "No track playing";
         }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("MP3 Player")
-                .setContentText(playbackStatus)
+                .setContentText(notificationText)
                 .setSmallIcon(iconRes)
                 .addAction(createAction("▶ Play", "PLAY"))
                 .addAction(createAction("⏸ Pause", "PAUSE"))
