@@ -11,10 +11,11 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.os.Build;
-import androidx.core.app.NotificationCompat;
+import android.util.Log;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.util.Log;
+
+import android.support.v4.app.NotificationCompat;
 
 public class AudioService extends Service {
     private static final String TAG = "AudioService";
@@ -102,7 +103,7 @@ public class AudioService extends Service {
             sendStateBroadcast("PAUSE");
         }
     }
-    
+
     public void resumeAudio() {
         if (mediaPlayer != null && !mediaPlayer.isPlaying()) {
             Log.d(TAG, "resumeAudio");
