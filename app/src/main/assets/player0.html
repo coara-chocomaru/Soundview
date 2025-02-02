@@ -6,35 +6,55 @@
 </head>
 <body>
     <script>
-        const audioPlayer = document.getElementById('audioPlayer');
-        let selectedFile = null;
+        // ファイル選択時の処理（外部から呼び出す）
+        function onFileSelected(filePath) {
+            Android.playAudio(filePath); // ファイルが選択されたらすぐに再生を開始
+            Android.setDuration(0); // 総再生時間の初期化
+        }
 
         // 再生情報の更新を通知
         function updatePlaybackInfo(currentTime, duration, state) {
             Android.updatePlaybackInfo(currentTime, duration, state);
         }
 
-        // 再生操作の通知
-        function notifyPlay(filePath) {
-            Android.playAudio(filePath);
-        }
-
-        function notifyPause() {
-            Android.pauseAudio();
-        }
-
-        function notifyStop() {
-            Android.stopAudio();
+        // 状態変更の通知
+        function updateNotification(state) {
+            switch (state) {
+                case 'PLAY':
+                    Android.playAudio(); // 再生中のファイルを再生
+                    break;
+                case 'PAUSE':
+                    Android.pauseAudio();
+                    break;
+                case 'STOP':
+                    Android.stopAudio();
+                    break;
+            }
+            // 状態に応じた通知の更新
+            Android.updatePlaybackInfo(getCurrentTime(), getDuration(), state);
         }
 
         // シークバーの更新を通知
-        function notifySeek(newTime) {
+        function seekTo(newTime) {
             Android.seekTo(newTime);
+            Android.updatePlaybackInfo(newTime, getDuration(), 'PLAY'); // シーク後に再生状態とする
         }
 
-        // 再生完了の通知
-        function notifyPlaybackEnded() {
-            notifyStop();
+        // 再生時間を取得
+        function getCurrentTime() {
+            return document.getElementById('audioPlayer').currentTime;
+        }
+
+        // 総再生時間を取得
+        function getDuration() {
+            return document.getElementById('audioPlayer').duration;
+        }
+
+        // 再生時間を更新
+        function updateTimeDisplay(timeString) {
+            document.getElementById('currentTime').textContent = timeString;
+            // 時間更新を通知
+            Android.updatePlaybackInfo(parseFloat(timeString), getDuration(), 'PLAY');
         }
 
         // 時間の形式をMM:SSに変換する
@@ -44,13 +64,49 @@
             return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
         }
 
-        // ファイル選択時の処理（ファイル選択が通知用HTMLで必要な場合）
-        function onFileSelected(filePath) {
-            selectedFile = filePath;
-            Android.setDuration(audioPlayer.duration);
+        // 総再生時間を設定
+        function setDuration(duration) {
+            document.getElementById('duration').textContent = formatTime(duration);
+            Android.setDuration(duration);
         }
 
-        // これらの関数は外部（player.html）から呼び出されることを想定しています
+        // 以下の関数は、player.htmlから呼び出されることを想定
+        window.onFileSelected = onFileSelected;
+        window.updateNotification = updateNotification;
+        window.seekTo = seekTo;
+        window.updateTimeDisplay = updateTimeDisplay;
+        window.setDuration = setDuration;
+
+        // 再生中、ポーズ、停止の状態をチェックして更新
+        function checkPlaybackState() {
+            const audioPlayer = document.getElementById('audioPlayer');
+            if (audioPlayer.paused) {
+                updateNotification('PAUSE');
+            } else if (audioPlayer.ended) {
+                updateNotification('STOP');
+            } else {
+                updateNotification('PLAY');
+            }
+        }
+
+        // 定期的に再生状態をチェック
+        setInterval(checkPlaybackState, 1000);
+
+        // 再生終了後の処理
+        document.getElementById('audioPlayer').addEventListener('ended', function() {
+            updateNotification('STOP');
+        });
+
+        // シークバーの操作を監視
+        document.getElementById('seekBar').addEventListener('input', function() {
+            const newTime = this.value / 100 * getDuration();
+            seekTo(newTime);
+        });
+
+        // 再生時間が更新されたときの処理
+        document.getElementById('audioPlayer').addEventListener('timeupdate', function() {
+            updateTimeDisplay(formatTime(this.currentTime));
+        });
     </script>
 </body>
 </html>
