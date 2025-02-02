@@ -29,12 +29,14 @@ public class MainActivity extends AppCompatActivity {
     private AudioService audioService;
     private boolean isBound = false;
 
+    // AudioServiceからの再生状態ブロードキャストを受信し、WebView内のUI（波形アニメーション等）を更新する
     private final BroadcastReceiver audioStateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String state = intent.getStringExtra("state");
             Log.d(TAG, "Audio state received: " + state);
             if (state != null) {
+                // WebViewを更新するJavaScript呼び出し
                 switch (state) {
                     case "PLAY":
                         webView.evaluateJavascript("document.getElementById('waveAnimation').classList.remove('hidden');", null);
@@ -51,6 +53,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    // AudioServiceからの時間更新を受信
     private final BroadcastReceiver timeUpdateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -123,6 +126,27 @@ public class MainActivity extends AppCompatActivity {
         public void stopAudio() {
             if (audioService != null) {
                 audioService.stopAudio();
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        public void updatePlaybackTime(double time) {
+            if (audioService != null) {
+                audioService.updatePlaybackTime(time);
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        public void seekTo(double time) {
+            if (audioService != null) {
+                audioService.seekTo(time);
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        public void setDuration(double duration) {
+            if (audioService != null) {
+                audioService.setDuration(duration);
             }
         }
     }
