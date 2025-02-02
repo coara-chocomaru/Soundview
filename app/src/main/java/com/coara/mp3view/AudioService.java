@@ -110,6 +110,7 @@ public class AudioService extends Service {
             notificationText = "Paused: " + currentFile;
         } else {
             iconRes = R.drawable.ic_stopped;
+            notificationText = "MP3 Player";
         }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
