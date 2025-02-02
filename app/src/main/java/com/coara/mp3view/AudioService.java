@@ -16,6 +16,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
 import android.util.Log;
+import android.support.v4.media.session.MediaSessionCompat;
 
 public class AudioService extends Service {
     private static final String TAG = "AudioService";
@@ -25,6 +26,7 @@ public class AudioService extends Service {
     private static final int NOTIFICATION_ID = 1;
     private String currentFile = null;
     private String playbackStatus = "STOP"; // 初期状態はSTOP
+    private MediaSessionCompat mediaSession;
 
     public class AudioBinder extends Binder {
         public AudioService getService() {
@@ -37,6 +39,8 @@ public class AudioService extends Service {
         super.onCreate();
         Log.d(TAG, "onCreate");
         createNotificationChannel();
+        mediaSession = new MediaSessionCompat(this, "MediaSessionTag");
+        mediaSession.setActive(true); // MediaSessionの有効化
         updateNotification(); // 初期状態でも通知を表示（STOP状態）
     }
 
@@ -181,5 +185,7 @@ public class AudioService extends Service {
         stopForeground(true);
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         manager.cancel(NOTIFICATION_ID);
+
+        mediaSession.release();
     }
 }
