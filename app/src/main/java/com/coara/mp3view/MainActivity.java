@@ -20,9 +20,6 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.view.KeyEvent;
 import android.util.Log;
 import android.content.ServiceConnection;
-import androidx.annotation.IntDef;
-import androidx.media3.session.MediaSession;
-import androidx.media3.common.Player;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -31,7 +28,6 @@ public class MainActivity extends AppCompatActivity {
     private ActivityResultLauncher<Intent> filePickerLauncher;
     private AudioService audioService;
     private boolean isBound = false;
-    private MediaSession mediaSession;
 
     private final BroadcastReceiver audioStateReceiver = new BroadcastReceiver() {
         @Override
@@ -94,35 +90,6 @@ public class MainActivity extends AppCompatActivity {
         startService(serviceIntent);
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
 
-        mediaSession = new MediaSession(this, new Player() {
-            @Override
-            public void play() {
-                if (audioService != null) {
-                    audioService.playAudio(""); // Here you should use a real file path
-                }
-            }
-
-            @Override
-            public void pause() {
-                if (audioService != null) {
-                    audioService.pauseAudio();
-                }
-            }
-
-            @Override
-            public void stop() {
-                if (audioService != null) {
-                    audioService.stopAudio();
-                }
-            }
-
-            @Override
-            public void setDeviceMuted(boolean muted) {
-                // Implement if needed, or leave empty
-            }
-        });
-        mediaSession.setActive(mediaSession.getPlayer());
-
         registerReceiver(audioStateReceiver, new IntentFilter("ACTION_AUDIO_STATE"));
     }
 
@@ -180,14 +147,6 @@ public class MainActivity extends AppCompatActivity {
             unbindService(serviceConnection);
             isBound = false;
         }
-        try {
-            unregisterReceiver(audioStateReceiver);
-        } catch (IllegalArgumentException e) {
-            Log.e(TAG, "Receiver was not registered.", e);
-        }
-
-        if (mediaSession != null) {
-            mediaSession.release();
-        }
+        unregisterReceiver(audioStateReceiver);
     }
 }
