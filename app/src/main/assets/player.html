@@ -1,455 +1,418 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MP3 Player</title>
-    <style>
-        /* ダークマテリアルデザイン */
-        body {
-            font-family: 'Roboto', sans-serif;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            background: linear-gradient(135deg, #121212, #1e1e1e);
-            margin: 0;
-            color: white;
-            transition: background 1s;
-        }
-
-        .player-container {
-            text-align: center;
-            background: rgba(40, 40, 40, 0.9);
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-            width: 100%;
-            max-width: 400px;
-            margin: 20px;
-        }
-
-        h1 {
-            margin-bottom: 20px;
-            font-size: 24px;
-        }
-
-        button, input[type="file"] {
-            padding: 12px 20px;
-            font-size: 18px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 100%;
-            transition: 0.3s;
-        }
-
-        button {
-            background: #6200ea;
-            color: white;
-            margin: 10px 0;
-            box-shadow: 0 4px 10px rgba(98, 0, 234, 0.5);
-        }
-
-        button:hover {
-            background: #7b1fa2;
-            box-shadow: 0 6px 12px rgba(123, 31, 162, 0.5);
-        }
-
-        #stopBtn {
-            background: #d32f2f;
-            box-shadow: 0 4px 10px rgba(211, 47, 47, 0.5);
-        }
-
-        #stopBtn:hover {
-            background: #b71c1c;
-            box-shadow: 0 6px 12px rgba(183, 28, 28, 0.5);
-        }
-
-        /* 波形アニメーション */
-        .wave-container {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 20px;
-            height: 50px;
-        }
-
-        .wave {
-            width: 8px;
-            height: 30px;
-            margin: 0 4px;
-            background: #03dac6;
-            animation: wave-animation 1s infinite ease-in-out;
-        }
-
-        .wave:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .wave:nth-child(3) {
-            animation-delay: 0.4s;
-        }
-
-        .wave:nth-child(4) {
-            animation-delay: 0.6s;
-        }
-
-        .wave:nth-child(5) {
-            animation-delay: 0.8s;
-        }
-
-        @keyframes wave-animation {
-            0%, 100% {
-                height: 20px;
-                background: #03dac6;
-            }
-            50% {
-                height: 40px;
-                background: #bb86fc;
-            }
-        }
-
-        @keyframes wave2-animation {
-            0%, 100% {
-                height: 20px;
-                background: #ff9800;
-            }
-            50% {
-                height: 40px;
-                background: #ff5722;
-            }
-        }
-
-        @keyframes wave3-animation {
-            0%, 100% {
-                height: 20px;
-                background: #4caf50;
-            }
-            50% {
-                height: 40px;
-                background: #8bc34a;
-            }
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        /* シークバー */
-        #seekBar {
-            width: 100%;
-            margin-top: 20px;
-            cursor: pointer;
-        }
-
-        /* 再生時間と現在の再生位置 */
-        #timeDisplay {
-            display: flex;
-            justify-content: space-between;
-            font-size: 14px;
-            margin-top: 10px;
-        }
-
-        /* 新しいボタンスタイル */
-        .control-buttons {
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-        }
-
-        .control-buttons button {
-            flex-grow: 1;
-            margin: 5px;
-            width: auto;
-        }
-
-        /* イコライザー */
-        .equalizer {
-            display: flex;
-            justify-content: space-around;
-            margin: 10px 0;
-        }
-
-        .eq-bar {
-            width: 10px;
-            background: #03dac6;
-            transition: height 0.3s;
-        }
-
-        .eq-bar:nth-child(1) { height: 20px; }
-        .eq-bar:nth-child(2) { height: 30px; }
-        .eq-bar:nth-child(3) { height: 40px; }
-
-        /* 背景エフェクト */
-        body.playing {
-            background: linear-gradient(135deg, #121212, #3700B3);
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MP3 Player</title>
+  <style>
+    /* 全体リセット */
+    * {
+      box-sizing: border-box;
+    }
+    
+    /* ダークマテリアルデザイン */
+    body {
+      font-family: 'Roboto', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #121212, #1e1e1e);
+      margin: 0;
+      color: white;
+      transition: background 0.5s ease;
+    }
+    
+    /* 再生中の背景エフェクト（パルス） */
+    @keyframes backgroundPulse {
+      0% {
+        background: linear-gradient(135deg, #121212, #1e1e1e);
+      }
+      50% {
+        background: linear-gradient(135deg, #1e1e1e, #121212);
+      }
+      100% {
+        background: linear-gradient(135deg, #121212, #1e1e1e);
+      }
+    }
+    body.playing {
+      animation: backgroundPulse 3s infinite ease-in-out;
+    }
+    
+    .player-container {
+      text-align: center;
+      background: rgba(40, 40, 40, 0.9);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      width: 90%;
+      max-width: 400px;
+      margin: 10px;
+    }
+    
+    h1 {
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+    
+    button,
+    input[type="file"] {
+      padding: 12px 20px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      transition: 0.3s;
+      margin-bottom: 10px;
+    }
+    
+    button {
+      background: #6200ea;
+      color: white;
+      box-shadow: 0 4px 10px rgba(98, 0, 234, 0.5);
+    }
+    
+    button:hover {
+      background: #7b1fa2;
+      box-shadow: 0 6px 12px rgba(123, 31, 162, 0.5);
+    }
+    
+    #stopBtn {
+      background: #d32f2f;
+      box-shadow: 0 4px 10px rgba(211, 47, 47, 0.5);
+    }
+    
+    #stopBtn:hover {
+      background: #b71c1c;
+      box-shadow: 0 6px 12px rgba(183, 28, 28, 0.5);
+    }
+    
+    #repeatBtn {
+      background: #009688;
+      box-shadow: 0 4px 10px rgba(0, 150, 136, 0.5);
+    }
+    #repeatBtn:hover {
+      background: #00796b;
+      box-shadow: 0 6px 12px rgba(0, 121, 107, 0.5);
+    }
+    
+    /* 波形アニメーション */
+    .wave-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 20px;
+      height: 50px;
+    }
+    
+    .wave {
+      width: 8px;
+      height: 30px;
+      margin: 0 4px;
+      background: #03dac6;
+      /* animationは再生時にJSで動的に設定 */
+    }
+    
+    /* 複数のアニメーション定義 */
+    @keyframes wave-animation-1 {
+      0%, 100% {
+        height: 20px;
+        background: #03dac6;
+      }
+      50% {
+        height: 40px;
+        background: #bb86fc;
+      }
+    }
+    
+    @keyframes wave-animation-2 {
+      0%, 100% {
+        transform: scaleY(1);
+        background: #ff9800;
+      }
+      50% {
+        transform: scaleY(1.5);
+        background: #ff5722;
+      }
+    }
+    
+    @keyframes wave-animation-3 {
+      0%, 100% {
+        height: 30px;
+        background: #8bc34a;
+      }
+      50% {
+        height: 50px;
+        background: #4caf50;
+      }
+    }
+    
+    /* 各波形のアニメーションディレイ */
+    .wave:nth-child(1) { animation-delay: 0s; }
+    .wave:nth-child(2) { animation-delay: 0.2s; }
+    .wave:nth-child(3) { animation-delay: 0.4s; }
+    .wave:nth-child(4) { animation-delay: 0.6s; }
+    .wave:nth-child(5) { animation-delay: 0.8s; }
+    
+    .hidden {
+      display: none;
+    }
+    
+    /* シークバー */
+    #seekBar {
+      width: 100%;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+    
+    /* 再生時間と現在の再生位置 */
+    #timeDisplay {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+  </style>
 </head>
 <body>
-    <div class="player-container">
-        <h1>MP3 Player</h1>
-        <input type="file" id="fileInput" accept="audio/*" multiple>
-        <div class="control-buttons">
-            <button id="playBtn">▶ Play</button>
-            <button id="pauseBtn">⏸ Pause</button>
-            <button id="stopBtn">⏹ Stop</button>
-            <button id="repeatBtn">🔁 Repeat</button>
-            <button id="autoPlayBtn">🔄 Auto Play</button>
-        </div>
-        <audio id="audioPlayer" class="hidden"></audio>
-
-        <!-- シークバー -->
-        <input type="range" id="seekBar" value="0" step="0.1" min="0" max="100">
-
-        <!-- 再生時間と現在の再生位置 -->
-        <div id="timeDisplay">
-            <span id="currentTime">00:00</span>
-            <span id="duration">00:00</span>
-        </div>
-
-        <!-- イコライザー -->
-        <div class="equalizer">
-            <div class="eq-bar" id="eq1"></div>
-            <div class="eq-bar" id="eq2"></div>
-            <div class="eq-bar" id="eq3"></div>
-        </div>
-
-        <!-- 波形アニメーション -->
-        <div class="wave-container hidden" id="waveAnimation">
-            <div class="wave"></div>
-            <div class="wave"></div>
-            <div class="wave"></div>
-            <div class="wave"></div>
-            <div class="wave"></div>
-        </div>
+  <div class="player-container">
+    <h1>MP3 Player</h1>
+    <input type="file" id="fileInput" accept="audio/*" />
+    <button id="playBtn">▶ Play</button>
+    <button id="pauseBtn">⏸ Pause</button>
+    <button id="stopBtn">⏹ Stop</button>
+    <button id="repeatBtn">🔁 Repeat Off</button>
+    <audio id="audioPlayer" class="hidden"></audio>
+    
+    <!-- シークバー -->
+    <input type="range" id="seekBar" value="0" step="0.1" min="0" max="100" />
+    
+    <!-- 再生時間と現在の再生位置 -->
+    <div id="timeDisplay">
+      <span id="currentTime">00:00</span>
+      <span id="duration">00:00</span>
     </div>
-
-    <script>
-        const fileInput = document.getElementById('fileInput');
-        const audioPlayer = document.getElementById('audioPlayer');
-        const playBtn = document.getElementById('playBtn');
-        const pauseBtn = document.getElementById('pauseBtn');
-        const stopBtn = document.getElementById('stopBtn');
-        const repeatBtn = document.getElementById('repeatBtn');
-        const autoPlayBtn = document.getElementById('autoPlayBtn');
-        const waveAnimation = document.getElementById('waveAnimation');
-        const seekBar = document.getElementById('seekBar');
-        const currentTimeDisplay = document.getElementById('currentTime');
-        const durationDisplay = document.getElementById('duration');
-        const eq1 = document.getElementById('eq1');
-        const eq2 = document.getElementById('eq2');
-        const eq3 = document.getElementById('eq3');
-
-        let selectedFiles = [];
-        let currentFileIndex = 0;
-        let isRepeat = false;
-        let isAutoPlay = false;
-        let currentAnimation = 'wave';
-
-        const animations = ['wave', 'wave2', 'wave3'];
-
-        // ファイル選択時の処理
-        fileInput.addEventListener('change', function(event) {
-            selectedFiles = Array.from(event.target.files);
-            loadFile(0);
-        });
-
-        // ファイルを読み込む
-        function loadFile(index) {
-            if (selectedFiles[index]) {
-                currentFileIndex = index;
-                const fileURL = URL.createObjectURL(selectedFiles[index]);
-                audioPlayer.src = fileURL;
-                audioPlayer.load();
-                audioPlayer.pause();
-                updateDurationDisplay();
-                Android.onFileSelected(fileURL);
-            }
+    
+    <!-- 波形アニメーション -->
+    <div class="wave-container hidden" id="waveAnimation">
+      <div class="wave"></div>
+      <div class="wave"></div>
+      <div class="wave"></div>
+      <div class="wave"></div>
+      <div class="wave"></div>
+    </div>
+  </div>
+  
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const playBtn = document.getElementById('playBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const repeatBtn = document.getElementById('repeatBtn');
+    const waveAnimation = document.getElementById('waveAnimation');
+    const seekBar = document.getElementById('seekBar');
+    const currentTimeDisplay = document.getElementById('currentTime');
+    const durationDisplay = document.getElementById('duration');
+    
+    let selectedFile = null;
+    
+    // ファイル選択時の処理
+    fileInput.addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      if (file) {
+        selectedFile = file;
+        const fileURL = URL.createObjectURL(file);
+        audioPlayer.src = fileURL;
+        audioPlayer.load();
+        audioPlayer.pause();
+        updateDurationDisplay();
+        if (typeof Android !== 'undefined' && Android.onFileSelected) {
+          Android.onFileSelected(fileURL);
         }
-
-        // 再生ボタン
-        playBtn.addEventListener('click', function() {
-            if (selectedFiles.length > 0) {
-                audioPlayer.play();
-                document.body.classList.add('playing');
-                showWaveAnimation();
-                playBtn.textContent = '⏸ Pause';
-                updateNotification('PLAY');
-                Android.playAudio(audioPlayer.src);
-            } else {
-                alert("Please select an MP3 file first.");
-            }
-        });
-
-        // 一時停止ボタン
-        pauseBtn.addEventListener('click', function() {
-            audioPlayer.pause();
-            document.body.classList.remove('playing');
-            hideWaveAnimation();
-            playBtn.textContent = '▶ Play';
-            updateNotification('PAUSE');
-            Android.pauseAudio();
-        });
-
-        // 停止ボタン
-        stopBtn.addEventListener('click', function() {
-            audioPlayer.pause();
-            audioPlayer.currentTime = 0;
-            document.body.classList.remove('playing');
-            hideWaveAnimation();
-            playBtn.textContent = '▶ Play';
-            updateNotification('STOP');
-            Android.stopAudio();
-        });
-
-        // リピートボタン
-        repeatBtn.addEventListener('click', function() {
-            isRepeat = !isRepeat;
-            repeatBtn.style.backgroundColor = isRepeat ? '#FF6F00' : '#6200ea';
-        });
-
-        // オートプレイボタン
-        autoPlayBtn.addEventListener('click', function() {
-            isAutoPlay = !isAutoPlay;
-            autoPlayBtn.style.backgroundColor = isAutoPlay ? '#FF6F00' : '#6200ea';
-        });
-
-        // 再生終了後の処理
-        audioPlayer.addEventListener('ended', function() {
-            if (isRepeat) {
-                audioPlayer.currentTime = 0;
-                audioPlayer.play();
-            } else if (isAutoPlay && currentFileIndex < selectedFiles.length - 1) {
-                loadFile(++currentFileIndex);
-                audioPlayer.play();
-            } else {
-                hideWaveAnimation();
-                playBtn.textContent = '▶ Play';
-                document.body.classList.remove('playing');
-                updateNotification('STOP');
-                Android.stopAudio();
-            }
-        });
-
-        // 再生時間とシークバーの同期
-        audioPlayer.addEventListener('timeupdate', function() {
-            const value = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-            seekBar.value = value;
-            updateTimeDisplay();
-            updateEqualizer();
-            Android.updatePlaybackInfo(audioPlayer.currentTime, audioPlayer.duration, audioPlayer.paused ? 'PAUSE' : 'PLAY');
-        });
-
-        // シークバーを操作して再生位置を変更
-        seekBar.addEventListener('input', function() {
-            const newTime = (seekBar.value / 100) * audioPlayer.duration;
-            audioPlayer.currentTime = newTime;
-            Android.seekTo(newTime);
-        });
-
-        // 再生時間と現在の再生位置を表示する
-        function updateTimeDisplay() {
-            const currentTime = formatTime(audioPlayer.currentTime);
-            const duration = formatTime(audioPlayer.duration);
-            currentTimeDisplay.textContent = currentTime;
-            durationDisplay.textContent = duration;
+      }
+    });
+    
+    // 波形アニメーションのスタイルをランダムに選択する関数
+    function setRandomWaveAnimation() {
+      const animations = ["wave-animation-1", "wave-animation-2", "wave-animation-3"];
+      const randomAnim = animations[Math.floor(Math.random() * animations.length)];
+      const waves = document.querySelectorAll('.wave-container .wave');
+      waves.forEach(wave => {
+        wave.style.animation = `${randomAnim} 1s infinite ease-in-out`;
+      });
+    }
+    
+    // 再生ボタン
+    playBtn.addEventListener('click', function() {
+      if (selectedFile) {
+        audioPlayer.play();
+        // ランダムな波形アニメーションを設定
+        setRandomWaveAnimation();
+        waveAnimation.classList.remove('hidden');
+        playBtn.textContent = '⏸ Pause';
+        // 背景エフェクト開始
+        document.body.classList.add('playing');
+        if (typeof Android !== 'undefined' && Android.playAudio) {
+          Android.playAudio(audioPlayer.src);
         }
-
-        // 時間の形式をMM:SSに変換する
-        function formatTime(seconds) {
-            const minutes = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        updateNotification('PLAY');
+      } else {
+        alert("Please select an MP3 file first.");
+      }
+    });
+    
+    // 一時停止ボタン
+    pauseBtn.addEventListener('click', function() {
+      audioPlayer.pause();
+      waveAnimation.classList.add('hidden');
+      playBtn.textContent = '▶ Play';
+      // 背景エフェクト解除
+      document.body.classList.remove('playing');
+      if (typeof Android !== 'undefined' && Android.pauseAudio) {
+        Android.pauseAudio();
+      }
+      updateNotification('PAUSE');
+    });
+    
+    // 停止ボタン
+    stopBtn.addEventListener('click', function() {
+      audioPlayer.pause();
+      audioPlayer.currentTime = 0;
+      waveAnimation.classList.add('hidden');
+      playBtn.textContent = '▶ Play';
+      // 背景エフェクト解除
+      document.body.classList.remove('playing');
+      if (typeof Android !== 'undefined' && Android.stopAudio) {
+        Android.stopAudio();
+      }
+      updateNotification('STOP');
+    });
+    
+    // リピートボタン：ループ再生の切替
+    repeatBtn.addEventListener('click', function() {
+      audioPlayer.loop = !audioPlayer.loop;
+      repeatBtn.textContent = audioPlayer.loop ? '🔁 Repeat On' : '🔁 Repeat Off';
+      if (typeof Android !== 'undefined' && Android.toggleRepeat) {
+        Android.toggleRepeat(audioPlayer.loop);
+      }
+    });
+    
+    // 再生終了時の処理
+    audioPlayer.addEventListener('ended', function() {
+      waveAnimation.classList.add('hidden');
+      playBtn.textContent = '▶ Play';
+      document.body.classList.remove('playing');
+      updateNotification('STOP');
+      if (typeof Android !== 'undefined' && Android.stopAudio) {
+        Android.stopAudio();
+      }
+    });
+    
+    // 再生位置とシークバーの同期
+    audioPlayer.addEventListener('timeupdate', function() {
+      if (audioPlayer.duration) {
+        const value = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+        seekBar.value = value;
+      }
+      updateTimeDisplay();
+      if (typeof Android !== 'undefined' && Android.updatePlaybackInfo) {
+        Android.updatePlaybackInfo(audioPlayer.currentTime, audioPlayer.duration, audioPlayer.paused ? 'PAUSE' : 'PLAY');
+      }
+    });
+    
+    // シークバー操作で再生位置を変更
+    seekBar.addEventListener('input', function() {
+      if (audioPlayer.duration) {
+        const newTime = (seekBar.value / 100) * audioPlayer.duration;
+        audioPlayer.currentTime = newTime;
+        if (typeof Android !== 'undefined' && Android.seekTo) {
+          Android.seekTo(newTime);
         }
-
-        // 動画の長さが決まったら表示する
-        function updateDurationDisplay() {
-            if (audioPlayer.duration) {
-                const duration = formatTime(audioPlayer.duration);
-                durationDisplay.textContent = duration;
-                Android.setDuration(audioPlayer.duration);
-            }
+      }
+    });
+    
+    // 再生時間表示の更新
+    function updateTimeDisplay() {
+      const currentTime = formatTime(audioPlayer.currentTime);
+      const duration = formatTime(audioPlayer.duration);
+      currentTimeDisplay.textContent = currentTime;
+      durationDisplay.textContent = duration;
+    }
+    
+    // 時間をMM:SS形式に変換
+    function formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    
+    // 動画（音源）の長さが確定したら表示
+    function updateDurationDisplay() {
+      if (audioPlayer.duration) {
+        const duration = formatTime(audioPlayer.duration);
+        durationDisplay.textContent = duration;
+        if (typeof Android !== 'undefined' && Android.setDuration) {
+          Android.setDuration(audioPlayer.duration);
         }
-
-        // 再生状態の更新
-        function updateNotification(state) {
-            switch (state) {
-                case 'PLAY':
-                    Android.playOrPause();
-                    break;
-                case 'PAUSE':
-                    Android.playOrPause();
-                    break;
-                case 'STOP':
-                    Android.stop();
-                    break;
-            }
-        }
-
-        // 波形アニメーションの表示
-        function showWaveAnimation() {
-            waveAnimation.classList.remove('hidden');
-            currentAnimation = animations[Math.floor(Math.random() * animations.length)];
-            Array.from(waveAnimation.children).forEach((wave, index) => {
-                wave.style.animation = `${currentAnimation}-animation 1s infinite ease-in-out`;
-                wave.style.animationDelay = `${index * 0.2}s`;
-            });
-        }
-
-        // 波形アニメーションの非表示
-        function hideWaveAnimation() {
-            waveAnimation.classList.add('hidden');
-        }
-
-        // イコライザーの更新
-        function updateEqualizer() {
-            const time = audioPlayer.currentTime;
-            eq1.style.height = `${Math.sin(time) * 20 + 25}px`;
-            eq2.style.height = `${Math.sin(time * 2) * 20 + 35}px`;
-            eq3.style.height = `${Math.sin(time * 3) * 20 + 45}px`;
-        }
-
-        // 初期設定
-        function checkPlaybackState() {
-            if (audioPlayer.paused) {
-                updateNotification('PAUSE');
-            } else if (audioPlayer.ended) {
-                updateNotification('STOP');
-            } else {
-                updateNotification('PLAY');
-            }
-        }
-
-        // 定期的に再生状態をチェック
-        setInterval(checkPlaybackState, 1000);
-
-        // Javaからの状態更新を受け取る関数
-        function updateUIFromJava(state) {
-            switch (state) {
-                case 'PLAY':
-                    audioPlayer.play();
-                    document.body.classList.add('playing');
-                    showWaveAnimation();
-                    playBtn.textContent = '⏸ Pause';
-                    break;
-                case 'PAUSE':
-                    audioPlayer.pause();
-                    document.body.classList.remove('playing');
-                    hideWaveAnimation();
-                    playBtn.textContent = '▶ Play';
-                    break;
-                case 'STOP':
-                    audioPlayer.pause();
-                    audioPlayer.currentTime = 0;
-                    document.body.classList.remove('playing');
-                    hideWaveAnimation();
-                    playBtn.textContent = '▶ Play';
-                    break;
-            }
-        }
-    </script>
+      }
+    }
+    
+    // Androidへの再生状態通知（必要に応じて）
+    function updateNotification(state) {
+      if (typeof Android === 'undefined') return;
+      switch (state) {
+        case 'PLAY':
+          if (Android.playOrPause) Android.playOrPause();
+          break;
+        case 'PAUSE':
+          if (Android.playOrPause) Android.playOrPause();
+          break;
+        case 'STOP':
+          if (Android.stop) Android.stop();
+          break;
+      }
+    }
+    
+    // 定期的に再生状態をチェック
+    function checkPlaybackState() {
+      if (audioPlayer.paused) {
+        updateNotification('PAUSE');
+      } else if (audioPlayer.ended) {
+        updateNotification('STOP');
+      } else {
+        updateNotification('PLAY');
+      }
+    }
+    setInterval(checkPlaybackState, 1000);
+    
+    // Java側からの状態更新用の関数
+    function updateUIFromJava(state) {
+      switch (state) {
+        case 'PLAY':
+          audioPlayer.play();
+          setRandomWaveAnimation();
+          waveAnimation.classList.remove('hidden');
+          playBtn.textContent = '⏸ Pause';
+          document.body.classList.add('playing');
+          break;
+        case 'PAUSE':
+          audioPlayer.pause();
+          waveAnimation.classList.add('hidden');
+          playBtn.textContent = '▶ Play';
+          document.body.classList.remove('playing');
+          break;
+        case 'STOP':
+          audioPlayer.pause();
+          audioPlayer.currentTime = 0;
+          waveAnimation.classList.add('hidden');
+          playBtn.textContent = '▶ Play';
+          document.body.classList.remove('playing');
+          break;
+      }
+    }
+  </script>
 </body>
 </html>
