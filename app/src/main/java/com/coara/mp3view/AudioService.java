@@ -134,17 +134,17 @@ public class AudioService extends Service {
         String duration = "00:00";
 
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-            iconRes = R.drawable.ic_playing;  // 実際の再生中アイコンを用意してください
+            iconRes = R.drawable.ic_playing;  // 再生中アイコンを用意してください
             notificationText = "Now playing: " + currentFile;
             currentTime = formatTime(mediaPlayer.getCurrentPosition() / 1000);
             duration = formatTime(mediaPlayer.getDuration() / 1000);
         } else if ("PAUSE".equals(playbackStatus) && mediaPlayer != null) {
-            iconRes = R.drawable.ic_paused;  // 一時停止中のアイコンを用意してください
+            iconRes = R.drawable.ic_paused;  // 一時停止中アイコンを用意してください
             notificationText = "Paused: " + currentFile;
             currentTime = formatTime(mediaPlayer.getCurrentPosition() / 1000);
             duration = formatTime(mediaPlayer.getDuration() / 1000);
         } else {
-            iconRes = R.drawable.ic_stopped;  // 停止中のアイコンを用意してください
+            iconRes = R.drawable.ic_stopped;  // 停止中アイコンを用意してください
         }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
