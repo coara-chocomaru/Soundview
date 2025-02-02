@@ -65,4 +65,5 @@ dependencies {
     implementation 'androidx.media3:media3-session:1.0.0'
     implementation 'androidx.media3:media3-common:1.0.0'
     implementation 'com.android.support:support-v4:28.0.0'
+    implementation 'com.android.support:appcompat-v7:28.0.0'
 }
