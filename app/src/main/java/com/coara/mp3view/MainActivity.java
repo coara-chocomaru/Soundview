@@ -15,12 +15,10 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.content.ServiceConnection;
-import android.view.KeyEvent;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.media.session.MediaSessionCompat;
-
+import android.view.KeyEvent;
 
 public class MainActivity extends AppCompatActivity {
     private WebView webView;
@@ -29,7 +27,7 @@ public class MainActivity extends AppCompatActivity {
     private AudioService audioService;
     private boolean isBound = false;
 
-    // AudioService からの再生状態ブロードキャストを受信し、WebView 内の再生状態を更新するレシーバー
+    // AudioServiceからの再生状態ブロードキャストを受信し、WebView内のUI（波形アニメーション等）を更新する
     private final BroadcastReceiver audioStateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -37,17 +35,17 @@ public class MainActivity extends AppCompatActivity {
             if (state != null) {
                 switch (state) {
                     case "PLAY":
-                        // WebView 内の audio 要素の再生指示（HTML 側で適宜処理するスクリプト例）
-                        webView.evaluateJavascript("document.getElementById('audioPlayer').play();", null);
+                        // 再生状態の場合は波形アニメーション表示
                         webView.evaluateJavascript("document.getElementById('waveAnimation').classList.remove('hidden');", null);
                         break;
                     case "PAUSE":
-                        webView.evaluateJavascript("document.getElementById('audioPlayer').pause();", null);
+                        // 一時停止状態の場合は波形アニメーション非表示
                         webView.evaluateJavascript("document.getElementById('waveAnimation').classList.add('hidden');", null);
                         break;
                     case "STOP":
-                        webView.evaluateJavascript("document.getElementById('audioPlayer').pause(); document.getElementById('audioPlayer').currentTime = 0;", null);
+                        // 停止状態の場合は波形アニメーション非表示およびaudioタグの状態リセット
                         webView.evaluateJavascript("document.getElementById('waveAnimation').classList.add('hidden');", null);
+                        webView.evaluateJavascript("document.getElementById('audioPlayer').pause(); document.getElementById('audioPlayer').currentTime = 0;", null);
                         break;
                 }
             }
@@ -59,14 +57,14 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // WebView の初期化
+        // WebViewの設定
         webView = findViewById(R.id.webView);
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setAllowFileAccess(true);
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient() {
-            // <input type="file"> によるファイル選択の対応
+            // <input type="file"> のファイル選択に対応
             @Override
             public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
                 MainActivity.this.filePathCallback = filePathCallback;
@@ -77,11 +75,12 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
-        // JavaScript インターフェースの登録（HTML 側からの操作時に AudioService のメソッドを呼び出す）
+
+        // JavaScriptインターフェースの登録（HTML内のボタン操作からAudioServiceを呼び出す）
         webView.addJavascriptInterface(new WebAppInterface(), "Android");
         webView.loadUrl("file:///android_asset/player.html");
 
-        // ファイルピッカーの結果受信
+        // ファイルピッカー結果の処理
         filePickerLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
             if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
                 Uri uri = result.getData().getData();
@@ -92,16 +91,16 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // AudioService の開始とバインド
+        // AudioServiceの開始とバインド
         Intent serviceIntent = new Intent(this, AudioService.class);
         startService(serviceIntent);
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
 
-        // AudioService からの再生状態ブロードキャストを受信するためのレシーバー登録
+        // AudioServiceからの再生状態ブロードキャスト受信用レシーバー登録
         registerReceiver(audioStateReceiver, new IntentFilter("ACTION_AUDIO_STATE"));
     }
 
-    // JavaScript から呼ばれるインターフェース
+    // JavaScriptから呼ばれるインターフェース
     private class WebAppInterface {
         @android.webkit.JavascriptInterface
         public void playAudio(String filePath) {
@@ -123,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // AudioService との接続管理
+    // AudioServiceとの接続管理
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
