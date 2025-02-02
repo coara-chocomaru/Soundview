@@ -291,6 +291,28 @@
 
         // 定期的に再生状態をチェック
         setInterval(checkPlaybackState, 1000);
+
+        // Javaからの状態更新を受け取る関数
+        function updateUIFromJava(state) {
+            switch (state) {
+                case 'PLAY':
+                    audioPlayer.play();
+                    waveAnimation.classList.remove('hidden');
+                    playBtn.textContent = '⏸ Pause';
+                    break;
+                case 'PAUSE':
+                    audioPlayer.pause();
+                    waveAnimation.classList.add('hidden');
+                    playBtn.textContent = '▶ Play';
+                    break;
+                case 'STOP':
+                    audioPlayer.pause();
+                    audioPlayer.currentTime = 0;
+                    waveAnimation.classList.add('hidden');
+                    playBtn.textContent = '▶ Play';
+                    break;
+            }
+        }
     </script>
 </body>
 </html>
