@@ -77,9 +77,9 @@ public class MainActivity extends AppCompatActivity {
                 return true;
             }
         });
-        // JavaScriptインターフェースの登録（HTML側から Android メソッドを呼び出せるようにする）
+        // JavaScriptインターフェースの登録
         webView.addJavascriptInterface(new WebAppInterface(), "Android");
-        // assets/player.html を用意しておくか、適切なURLに変更してください
+        // assets/player.html を用意するか、適切な URL に変更してください
         webView.loadUrl("file:///android_asset/player.html");
 
         // ファイルピッカー結果の処理
