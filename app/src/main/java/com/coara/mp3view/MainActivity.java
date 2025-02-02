@@ -20,6 +20,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.view.KeyEvent;
 import android.util.Log;
 import android.content.ServiceConnection;
+import android.support.v4.media.session.MediaSessionCompat;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -28,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
     private ActivityResultLauncher<Intent> filePickerLauncher;
     private AudioService audioService;
     private boolean isBound = false;
+    private MediaSessionCompat mediaSession;
 
     // AudioServiceからの再生状態ブロードキャストを受信し、WebView内のUI（波形アニメーション等）を更新する
     private final BroadcastReceiver audioStateReceiver = new BroadcastReceiver() {
@@ -96,6 +98,10 @@ public class MainActivity extends AppCompatActivity {
         startService(serviceIntent);
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
 
+        // MediaSessionの設定
+        mediaSession = new MediaSessionCompat(this, "MediaSessionTag");
+        mediaSession.setActive(true);
+
         // AudioServiceからの再生状態ブロードキャスト受信用レシーバー登録
         registerReceiver(audioStateReceiver, new IntentFilter("ACTION_AUDIO_STATE"));
     }
@@ -158,5 +164,8 @@ public class MainActivity extends AppCompatActivity {
             isBound = false;
         }
         unregisterReceiver(audioStateReceiver);
+
+        // MediaSessionの破棄
+        mediaSession.release();
     }
 }
