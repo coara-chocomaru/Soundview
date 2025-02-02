@@ -16,8 +16,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
 import android.util.Log;
-import androidx.media3.session.MediaSession;
-import androidx.media3.common.Player;
 
 public class AudioService extends Service {
     private static final String TAG = "AudioService";
@@ -26,11 +24,10 @@ public class AudioService extends Service {
     private static final String CHANNEL_ID = "AudioServiceChannel";
     private static final int NOTIFICATION_ID = 1;
     private String currentFile = null;
-    private String playbackStatus = "STOP"; // Initial state is STOP
-    private MediaSession mediaSession;
+    private String playbackStatus = "STOP";
 
     public class AudioBinder extends Binder {
-        public AudioService getService() {
+        AudioService getService() {
             return AudioService.this;
         }
     }
@@ -39,31 +36,8 @@ public class AudioService extends Service {
     public void onCreate() {
         super.onCreate();
         Log.d(TAG, "onCreate");
-
-        mediaSession = new MediaSession(this, new Player() {
-            @Override
-            public void play() {
-                playAudio(currentFile != null ? currentFile : "");
-            }
-
-            @Override
-            public void pause() {
-                pauseAudio();
-            }
-
-            @Override
-            public void stop() {
-                stopAudio();
-            }
-
-            @Override
-            public void setDeviceMuted(boolean muted) {
-                // Implement if needed, or leave empty
-            }
-        });
-        mediaSession.setActive(mediaSession.getPlayer());
-
         createNotificationChannel();
+        updateNotification();
     }
 
     @Override
@@ -204,9 +178,8 @@ public class AudioService extends Service {
             mediaPlayer.release();
             mediaPlayer = null;
         }
-        stopForeground(STOP_FOREGROUND_REMOVE);
+        stopForeground(true);
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         manager.cancel(NOTIFICATION_ID);
-        mediaSession.release();
     }
 }
