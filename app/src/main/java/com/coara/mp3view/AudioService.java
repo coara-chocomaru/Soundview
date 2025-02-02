@@ -16,8 +16,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
 import android.util.Log;
-import android.support.v4.media.session.MediaSessionCompat;
-import android.support.v4.media.session.PlaybackStateCompat;
+import androidx.media.session.MediaSessionCompat;
+import androidx.media.session.PlaybackStateCompat;
 
 public class AudioService extends Service {
     private static final String TAG = "AudioService";
@@ -43,6 +43,23 @@ public class AudioService extends Service {
 
         // メディアセッションの設定
         mediaSession = new MediaSessionCompat(this, "MediaSessionTag");
+        mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
+        mediaSession.setCallback(new MediaSessionCompat.Callback() {
+            @Override
+            public void onPlay() {
+                playAudio(currentFile != null ? currentFile : "");
+            }
+
+            @Override
+            public void onPause() {
+                pauseAudio();
+            }
+
+            @Override
+            public void onStop() {
+                stopAudio();
+            }
+        });
         mediaSession.setActive(true);
 
         // 再生状態の設定
@@ -52,7 +69,6 @@ public class AudioService extends Service {
 
         // 通知チャネルの作成
         createNotificationChannel();
-        updateNotification();
     }
 
     @Override
@@ -82,11 +98,13 @@ public class AudioService extends Service {
             currentFile = filePath;
             playbackStatus = "PLAY";
             updateNotification();
+            updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
             sendStateBroadcast("PLAY");
         } catch (Exception e) {
             Log.e(TAG, "Error in playAudio", e);
             playbackStatus = "STOP";
             updateNotification();
+            updatePlaybackState(PlaybackStateCompat.STATE_STOPPED);
         }
     }
 
@@ -96,6 +114,7 @@ public class AudioService extends Service {
             mediaPlayer.pause();
             playbackStatus = "PAUSE";
             updateNotification();
+            updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
             sendStateBroadcast("PAUSE");
         }
     }
@@ -109,6 +128,7 @@ public class AudioService extends Service {
             currentFile = null;
             playbackStatus = "STOP";
             updateNotification();
+            updatePlaybackState(PlaybackStateCompat.STATE_STOPPED);
             sendStateBroadcast("STOP");
         }
     }
@@ -185,6 +205,11 @@ public class AudioService extends Service {
         Intent intent = new Intent("ACTION_AUDIO_STATE");
         intent.putExtra("state", state);
         sendBroadcast(intent);
+    }
+
+    private void updatePlaybackState(@PlaybackStateCompat.State int newState) {
+        stateBuilder.setState(newState, mediaPlayer != null ? mediaPlayer.getCurrentPosition() : 0, 1.0f);
+        mediaSession.setPlaybackState(stateBuilder.build());
     }
 
     @Override
