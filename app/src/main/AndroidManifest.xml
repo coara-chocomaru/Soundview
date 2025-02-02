@@ -28,24 +28,9 @@
         </activity>
 
         <!-- AudioService の宣言 -->
-        <service
-            android:name=".AudioService"
-            android:exported="true"
-            android:foregroundServiceType="mediaPlayback">
-            <intent-filter>
-                <action android:name="com.coara.mp3view.AudioService"/>
-            </intent-filter>
-        </service>
-
-        <!-- AudioServiceからの制御用ブロードキャストレシーバー -->
-        <receiver
-            android:name=".AudioService$AudioControlReceiver"
+          <service android:name=".AudioService"
             android:enabled="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="com.coara.mp3view.ACTION_AUDIO_CONTROL"/>
-            </intent-filter>
-        </receiver>
+            android:exported="true" />
 
     </application>
 
