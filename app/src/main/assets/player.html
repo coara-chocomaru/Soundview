@@ -180,8 +180,7 @@
                 audioPlayer.load();
                 audioPlayer.pause();
                 updateDurationDisplay();
-                // ファイル選択を通知（content://スキームのURIに変換はJava側で行う）
-                window.onFileSelected(file);
+                Android.onFileSelected(fileURL);
             }
         });
 
@@ -191,8 +190,8 @@
                 audioPlayer.play();
                 waveAnimation.classList.remove('hidden');
                 playBtn.textContent = '⏸ Pause';
-                // 再生開始を通知
                 updateNotification('PLAY');
+                Android.playAudio(audioPlayer.src);
             } else {
                 alert("Please select an MP3 file first.");
             }
@@ -203,8 +202,8 @@
             audioPlayer.pause();
             waveAnimation.classList.add('hidden');
             playBtn.textContent = '▶ Play';
-            // 一時停止を通知
             updateNotification('PAUSE');
+            Android.pauseAudio();
         });
 
         // 停止ボタン
@@ -213,16 +212,16 @@
             audioPlayer.currentTime = 0;
             waveAnimation.classList.add('hidden');
             playBtn.textContent = '▶ Play';
-            // 停止を通知
             updateNotification('STOP');
+            Android.stopAudio();
         });
 
         // 再生終了後の処理
         audioPlayer.addEventListener('ended', function() {
             waveAnimation.classList.add('hidden');
             playBtn.textContent = '▶ Play';
-            // 再生終了を通知
             updateNotification('STOP');
+            Android.stopAudio();
         });
 
         // 再生時間とシークバーの同期
@@ -230,16 +229,14 @@
             const value = (audioPlayer.currentTime / audioPlayer.duration) * 100;
             seekBar.value = value;
             updateTimeDisplay();
-            // 時間更新を通知
-            window.updateTimeDisplay(formatTime(audioPlayer.currentTime));
+            Android.updatePlaybackInfo(audioPlayer.currentTime, audioPlayer.duration, audioPlayer.paused ? 'PAUSE' : 'PLAY');
         });
 
         // シークバーを操作して再生位置を変更
         seekBar.addEventListener('input', function() {
             const newTime = (seekBar.value / 100) * audioPlayer.duration;
             audioPlayer.currentTime = newTime;
-            // シーク操作を通知
-            window.seekTo(newTime);
+            Android.seekTo(newTime);
         });
 
         // 再生時間と現在の再生位置を表示する
@@ -262,15 +259,38 @@
             if (audioPlayer.duration) {
                 const duration = formatTime(audioPlayer.duration);
                 durationDisplay.textContent = duration;
-                // 総再生時間を設定
-                window.setDuration(audioPlayer.duration);
+                Android.setDuration(audioPlayer.duration);
             }
         }
 
-        // player0.htmlへの通知関数
+        // 再生状態の更新
         function updateNotification(state) {
-            window.updateNotification(state);
+            switch (state) {
+                case 'PLAY':
+                    Android.playOrPause();
+                    break;
+                case 'PAUSE':
+                    Android.playOrPause();
+                    break;
+                case 'STOP':
+                    Android.stop();
+                    break;
+            }
         }
+
+        // 初期設定
+        function checkPlaybackState() {
+            if (audioPlayer.paused) {
+                updateNotification('PAUSE');
+            } else if (audioPlayer.ended) {
+                updateNotification('STOP');
+            } else {
+                updateNotification('PLAY');
+            }
+        }
+
+        // 定期的に再生状態をチェック
+        setInterval(checkPlaybackState, 1000);
     </script>
 </body>
 </html>
