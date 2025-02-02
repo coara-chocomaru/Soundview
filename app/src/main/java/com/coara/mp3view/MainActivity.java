@@ -20,8 +20,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.view.KeyEvent;
 import android.util.Log;
 import android.content.ServiceConnection;
-import android.support.v4.media.session.MediaSessionCompat;
-import android.support.v4.media.session.PlaybackStateCompat;
+import android.media.session.MediaSession;
+import android.media.session.PlaybackState;
 import android.app.PictureInPictureParams;
 import android.util.Rational;
 import android.view.View;
@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
     private ActivityResultLauncher<Intent> filePickerLauncher;
     private AudioService audioService;
     private boolean isBound = false;
-    private MediaSessionCompat mediaSession;
+    private MediaSession mediaSession;
 
     private final BroadcastReceiver audioStateReceiver = new BroadcastReceiver() {
         @Override
@@ -109,28 +109,26 @@ public class MainActivity extends AppCompatActivity {
         Button pipButton = findViewById(R.id.pip_button);
         pipButton.setOnClickListener(v -> {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                // Check if the activity supports PiP mode
-                if (isInPictureInPictureMode()) {
-                    // Exit PiP mode if already in it
-                    moveTaskToBack(true);
-                } else {
-                    // Enter PiP mode
-                    enterPictureInPictureMode(new PictureInPictureParams.Builder()
-                            .setAspectRatio(new Rational(16, 9))  // Set your appropriate aspect ratio
-                            .build());
-                }
+                // Enter PiP mode
+                PictureInPictureParams params = new PictureInPictureParams.Builder()
+                        .setAspectRatio(new Rational(16, 9))  // Set your appropriate aspect ratio
+                        .build();
+                enterPictureInPictureMode(params);
             }
         });
 
         // AudioServiceからの再生状態ブロードキャスト受信用レシーバー登録
         registerReceiver(audioStateReceiver, new IntentFilter("ACTION_AUDIO_STATE"));
+
+        // PiPボタンをWebViewの上に表示
+        pipButton.bringToFront();
     }
 
     private void initializeMediaSession() {
-        mediaSession = new MediaSessionCompat(this, "MP3Player");
-        mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
+        mediaSession = new MediaSession(this, "MP3Player");
+        mediaSession.setFlags(MediaSession.FLAG_HANDLES_MEDIA_BUTTONS | MediaSession.FLAG_HANDLES_TRANSPORT_CONTROLS);
         
-        mediaSession.setCallback(new MediaSessionCompat.Callback() {
+        mediaSession.setCallback(new MediaSession.Callback() {
             @Override
             public void onPlay() {
                 if (audioService != null) {
@@ -160,24 +158,24 @@ public class MainActivity extends AppCompatActivity {
         if (mediaSession == null) return;
 
         long position = 0;
-        int stateCode = PlaybackStateCompat.STATE_STOPPED;
+        int stateCode = PlaybackState.STATE_STOPPED;
         switch (state) {
             case "PLAY":
-                stateCode = PlaybackStateCompat.STATE_PLAYING;
+                stateCode = PlaybackState.STATE_PLAYING;
                 position = audioService != null ? audioService.getCurrentPosition() : 0;
                 break;
             case "PAUSE":
-                stateCode = PlaybackStateCompat.STATE_PAUSED;
+                stateCode = PlaybackState.STATE_PAUSED;
                 position = audioService != null ? audioService.getCurrentPosition() : 0;
                 break;
             case "STOP":
-                stateCode = PlaybackStateCompat.STATE_STOPPED;
+                stateCode = PlaybackState.STATE_STOPPED;
                 break;
         }
 
-        PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder()
-                .setActions(PlaybackStateCompat.ACTION_PLAY | 
-                            PlaybackStateCompat.ACTION_PAUSE)
+        PlaybackState.Builder stateBuilder = new PlaybackState.Builder()
+                .setActions(PlaybackState.ACTION_PLAY | 
+                            PlaybackState.ACTION_PAUSE)
                 .setState(stateCode, position, 1.0f);
         mediaSession.setPlaybackState(stateBuilder.build());
     }
