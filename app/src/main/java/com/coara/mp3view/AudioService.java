@@ -14,7 +14,6 @@ import android.os.Build;
 import androidx.core.app.NotificationCompat;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.IntentFilter;
 import android.util.Log;
 
 public class AudioService extends Service {
@@ -100,52 +99,26 @@ public class AudioService extends Service {
 
     private void updateNotification() {
         int iconRes;
-        String notificationText = "No track playing";
-        String currentTime = "00:00";
-        String duration = "00:00";
-
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             iconRes = R.drawable.ic_playing;
-            notificationText = "Now playing: " + currentFile;
-            currentTime = formatTime(mediaPlayer.getCurrentPosition() / 1000);
-            duration = formatTime(mediaPlayer.getDuration() / 1000);
         } else if (playbackStatus.equals("PAUSE")) {
             iconRes = R.drawable.ic_paused;
-            notificationText = "Paused: " + currentFile;
-            currentTime = formatTime(mediaPlayer.getCurrentPosition() / 1000);
-            duration = formatTime(mediaPlayer.getDuration() / 1000);
         } else {
             iconRes = R.drawable.ic_stopped;
         }
 
+        // 通知のボタンや再生時間表示は削除し、
+        // タイトル・本文は常に "Sound Player" を表示する
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Sound Player")
-                .setContentText(notificationText)
                 .setSmallIcon(iconRes)
-                .addAction(createAction("▶ Play", "PLAY"))
-                .addAction(createAction("⏸ Pause", "PAUSE"))
-                .addAction(createAction("⏹ Stop", "STOP"))
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOngoing(playbackStatus.equals("PLAY"))
-                .setContentText(notificationText + " - " + currentTime + "/" + duration)
+                .setContentText("Sound Player")
                 .setContentIntent(getPendingIntent())
                 .build();
 
         startForeground(NOTIFICATION_ID, notification);
-    }
-
-    private String formatTime(int seconds) {
-        int minutes = seconds / 60;
-        int secs = seconds % 60;
-        return String.format("%02d:%02d", minutes, secs);
-    }
-
-    private NotificationCompat.Action createAction(String title, String action) {
-        Intent intent = new Intent("AUDIO_CONTROL");
-        intent.putExtra("ACTION", action);
-        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, action.hashCode(),
-                intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        return new NotificationCompat.Action(0, title, pendingIntent);
     }
 
     private PendingIntent getPendingIntent() {
