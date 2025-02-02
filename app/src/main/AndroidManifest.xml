@@ -45,7 +45,7 @@
         <receiver
             android:name=".AudioService$AudioControlReceiver"
             android:enabled="true"
-            android:exported="false" >
+            android:exported="true" >
             <intent-filter>
                 <action android:name="AUDIO_CONTROL" />
             </intent-filter>
@@ -55,7 +55,7 @@
         <receiver
             android:name=".MainActivity$AudioStateReceiver"
             android:enabled="true"
-            android:exported="false">
+            android:exported="true">
             <intent-filter>
                 <action android:name="ACTION_AUDIO_STATE" />
             </intent-filter>
