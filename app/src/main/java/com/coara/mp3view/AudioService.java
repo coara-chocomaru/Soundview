@@ -17,6 +17,7 @@ import android.content.Context;
 import android.content.IntentFilter;
 import android.util.Log;
 import android.support.v4.media.session.MediaSessionCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
 
 public class AudioService extends Service {
     private static final String TAG = "AudioService";
@@ -27,6 +28,7 @@ public class AudioService extends Service {
     private String currentFile = null;
     private String playbackStatus = "STOP"; // 初期状態はSTOP
     private MediaSessionCompat mediaSession;
+    private PlaybackStateCompat.Builder stateBuilder;
 
     public class AudioBinder extends Binder {
         public AudioService getService() {
@@ -38,10 +40,19 @@ public class AudioService extends Service {
     public void onCreate() {
         super.onCreate();
         Log.d(TAG, "onCreate");
-        createNotificationChannel();
+
+        // メディアセッションの設定
         mediaSession = new MediaSessionCompat(this, "MediaSessionTag");
-        mediaSession.setActive(true); // MediaSessionの有効化
-        updateNotification(); // 初期状態でも通知を表示（STOP状態）
+        mediaSession.setActive(true);
+
+        // 再生状態の設定
+        stateBuilder = new PlaybackStateCompat.Builder()
+                .setActions(PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_STOP);
+        mediaSession.setPlaybackState(stateBuilder.build());
+
+        // 通知チャネルの作成
+        createNotificationChannel();
+        updateNotification();
     }
 
     @Override
@@ -122,6 +133,7 @@ public class AudioService extends Service {
             iconRes = R.drawable.ic_stopped;
         }
 
+        // 通知の作成
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("MP3 Player")
                 .setContentText(notificationText)
@@ -185,7 +197,6 @@ public class AudioService extends Service {
         stopForeground(true);
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         manager.cancel(NOTIFICATION_ID);
-
         mediaSession.release();
     }
 }
