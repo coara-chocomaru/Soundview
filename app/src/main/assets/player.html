@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MP3 Player</title>
     <style>
-        /* ダークマテリアルデザイン */
         body {
             font-family: 'Roboto', sans-serif;
             display: flex;
@@ -65,7 +64,6 @@
             box-shadow: 0 6px 12px rgba(183, 28, 28, 0.5);
         }
 
-        /* 波形アニメーション */
         .wave-container {
             display: flex;
             justify-content: center;
@@ -113,14 +111,12 @@
             display: none;
         }
 
-        /* シークバー */
         #seekBar {
             width: 100%;
             margin-top: 20px;
             cursor: pointer;
         }
 
-        /* 再生時間と現在の再生位置 */
         #timeDisplay {
             display: flex;
             justify-content: space-between;
@@ -138,16 +134,12 @@
         <button id="stopBtn">⏹ Stop</button>
         <audio id="audioPlayer" class="hidden"></audio>
 
-        <!-- シークバー -->
         <input type="range" id="seekBar" value="0" step="0.1" min="0" max="100">
-
-        <!-- 再生時間と現在の再生位置 -->
         <div id="timeDisplay">
             <span id="currentTime">00:00</span>
             <span id="duration">00:00</span>
         </div>
 
-        <!-- 波形アニメーション -->
         <div class="wave-container hidden" id="waveAnimation">
             <div class="wave"></div>
             <div class="wave"></div>
