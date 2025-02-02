@@ -27,7 +27,7 @@ public class MainActivity extends AppCompatActivity {
     private AudioService audioService;
     private boolean isBound = false;
 
-    // BroadcastReceiver：AudioServiceからの再生状態ブロードキャストを受信し、WebView内の再生状態を更新
+    // AudioServiceから送信された再生状態ブロードキャストを受信し、WebView内の再生状態を更新する
     private final BroadcastReceiver audioStateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -35,17 +35,24 @@ public class MainActivity extends AppCompatActivity {
             if (state != null) {
                 switch (state) {
                     case "PLAY":
-                        // WebView内のaudio要素を再生、波形アニメーション表示
-                        webView.evaluateJavascript("document.getElementById('audioPlayer').play();", null);
+                        // もしAudioServiceにファイル情報がない場合、WebViewから取得して再生指示
+                        if (audioService.getCurrentFile() == null) {
+                            webView.evaluateJavascript("document.getElementById('audioPlayer').src", value -> {
+                                String fileUrl = value.replace("\"", "");
+                                if (!fileUrl.isEmpty()) {
+                                    audioService.playAudio(fileUrl);
+                                }
+                            });
+                        } else {
+                            audioService.playAudio(audioService.getCurrentFile());
+                        }
                         webView.evaluateJavascript("document.getElementById('waveAnimation').classList.remove('hidden');", null);
                         break;
                     case "PAUSE":
-                        // WebView内のaudio要素を一時停止、波形アニメーション非表示
                         webView.evaluateJavascript("document.getElementById('audioPlayer').pause();", null);
                         webView.evaluateJavascript("document.getElementById('waveAnimation').classList.add('hidden');", null);
                         break;
                     case "STOP":
-                        // WebView内のaudio要素を停止（先頭に戻す）し、波形アニメーション非表示
                         webView.evaluateJavascript("document.getElementById('audioPlayer').pause(); document.getElementById('audioPlayer').currentTime = 0;", null);
                         webView.evaluateJavascript("document.getElementById('waveAnimation').classList.add('hidden');", null);
                         break;
@@ -59,14 +66,14 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // WebViewの初期化
+        // WebViewの設定
         webView = findViewById(R.id.webView);
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setAllowFileAccess(true);
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient() {
-            // <input type="file">からのファイル選択に対応
+            // <input type="file"> のファイル選択に対応
             @Override
             public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
                 MainActivity.this.filePathCallback = filePathCallback;
@@ -78,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // JavaScriptインターフェース登録
+        // JavaScriptインターフェースの登録
         webView.addJavascriptInterface(new WebAppInterface(), "Android");
         webView.loadUrl("file:///android_asset/player.html");
 
@@ -93,12 +100,12 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // AudioServiceの起動とバインド
+        // AudioServiceの開始とバインド
         Intent serviceIntent = new Intent(this, AudioService.class);
         startService(serviceIntent);
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
 
-        // AudioServiceからの再生状態ブロードキャスト受信用にレシーバー登録
+        // AudioServiceからの再生状態ブロードキャスト受信用のレシーバー登録
         registerReceiver(audioStateReceiver, new IntentFilter("ACTION_AUDIO_STATE"));
     }
 
