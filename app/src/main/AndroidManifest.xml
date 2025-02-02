@@ -18,8 +18,9 @@
         <!-- メインアクティビティ -->
         <activity
             android:name=".MainActivity"
+            android:configChanges="keyboardHidden|orientation|screenSize"
             android:exported="true"
-            android:supportsPictureInPicture="true">
+            android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
@@ -27,9 +28,24 @@
         </activity>
 
         <!-- AudioService の宣言 -->
-        <service android:name=".AudioService"
+        <service
+            android:name=".AudioService"
+            android:exported="true"
+            android:foregroundServiceType="mediaPlayback">
+            <intent-filter>
+                <action android:name="com.coara.mp3view.AudioService"/>
+            </intent-filter>
+        </service>
+
+        <!-- AudioServiceからの制御用ブロードキャストレシーバー -->
+        <receiver
+            android:name=".AudioService$AudioControlReceiver"
             android:enabled="true"
-            android:exported="true" />
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.coara.mp3view.ACTION_AUDIO_CONTROL"/>
+            </intent-filter>
+        </receiver>
 
     </application>
 
