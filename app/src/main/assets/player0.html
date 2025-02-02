@@ -7,8 +7,12 @@
 <body>
     <script>
         // ファイル選択通知用の関数
-        function onFileSelected(filePath) {
-            Android.onFileSelected(filePath);
+        function onFileSelected(file) {
+            if (file instanceof File) {
+                Android.onFileSelected(file); // FileオブジェクトをJavaに渡す
+            } else if (typeof file === 'string') {
+                Android.onFileSelected(file); // 既に文字列（URI）が渡されている場合
+            }
         }
 
         // 再生情報の更新を通知
