@@ -23,7 +23,6 @@ import android.content.ServiceConnection;
 import androidx.annotation.IntDef;
 import androidx.media3.session.MediaSession;
 import androidx.media3.common.Player;
-import androidx.media3.common.PlaybackState;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -33,7 +32,6 @@ public class MainActivity extends AppCompatActivity {
     private AudioService audioService;
     private boolean isBound = false;
     private MediaSession mediaSession;
-    private Player playbackState;
 
     private final BroadcastReceiver audioStateReceiver = new BroadcastReceiver() {
         @Override
@@ -96,8 +94,7 @@ public class MainActivity extends AppCompatActivity {
         startService(serviceIntent);
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
 
-        mediaSession = new MediaSession(this);
-        mediaSession.setPlayer(new Player() {
+        mediaSession = new MediaSession(this, new Player() {
             @Override
             public void play() {
                 if (audioService != null) {
@@ -118,8 +115,13 @@ public class MainActivity extends AppCompatActivity {
                     audioService.stopAudio();
                 }
             }
+
+            @Override
+            public void setDeviceMuted(boolean muted) {
+                // Implement if needed, or leave empty
+            }
         });
-        mediaSession.setActive(true);
+        mediaSession.setActive(mediaSession.getPlayer());
 
         registerReceiver(audioStateReceiver, new IntentFilter("ACTION_AUDIO_STATE"));
     }
