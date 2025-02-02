@@ -36,7 +36,7 @@
 -adaptresourcefilenames **.png
 
 # Use a dictionary for class obfuscation
--classobfuscationdictionary obfuscation-dictionary.tx
+-classobfuscationdictionary obfuscation-dictionary.txt
 
 # Rename source file attribute to avoid leaking file names
 -renamesourcefileattribute SourceFile
