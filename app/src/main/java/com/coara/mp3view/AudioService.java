@@ -164,9 +164,8 @@ public class AudioService extends Service {
     }
 
     public void setDuration(double duration) {
-        // ここでは総再生時間を設定しますが、具体的な処理は通知に反映するために必要です
-        updateNotification(0, duration);
-    }
+    updateNotification(0, duration);
+}
 
     private void updateNotification() {
         updateNotification(mediaPlayer == null ? 0 : mediaPlayer.getCurrentPosition() / 1000.0, 
