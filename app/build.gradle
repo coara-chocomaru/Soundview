@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    compileSdk = 33  // 最新の安定版に変更
+    compileSdk = 35  // 最新の安定版に変更
 
     namespace = 'com.coara.mp3view'
 
