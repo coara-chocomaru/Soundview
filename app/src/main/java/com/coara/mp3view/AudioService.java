@@ -124,9 +124,9 @@ public class AudioService extends Service {
                 .setSmallIcon(iconRes)
                 .addAction(createAction("▶ Play", "PLAY"))
                 .addAction(createAction("⏸ Pause", "PAUSE"))
-                .addAction(createAction("⏹ Stop", "STOP"))
+                // Removed Stop action as per request
                 .setPriority(NotificationCompat.PRIORITY_LOW)
-                .setOngoing(playbackStatus.equals("PLAY"))
+                .setOngoing(playbackStatus.equals("PLAY") || playbackStatus.equals("PAUSE"))
                 .setContentText(notificationText + " - " + currentTime + "/" + duration)
                 .setContentIntent(getPendingIntent())
                 .build();
