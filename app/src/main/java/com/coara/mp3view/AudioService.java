@@ -4,9 +4,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.media.MediaPlayer;
 import android.os.Binder;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import android.net.Uri;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -26,21 +24,10 @@ public class AudioService extends Service {
     private static final String CHANNEL_ID = "AudioServiceChannel";
     private static final int NOTIFICATION_ID = 1;
     private String currentFile = null;
-    private String playbackStatus = "STOP";
-    private Handler handler = new Handler(Looper.getMainLooper());
-
-    private final BroadcastReceiver notificationActionReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getStringExtra("ACTION");
-            if (action != null) {
-                performAction(action);
-            }
-        }
-    };
+    private String playbackStatus = "STOP"; // 初期状態はSTOP
 
     public class AudioBinder extends Binder {
-        public AudioService getService() {
+        AudioService getService() {
             return AudioService.this;
         }
     }
@@ -50,9 +37,7 @@ public class AudioService extends Service {
         super.onCreate();
         Log.d(TAG, "onCreate");
         createNotificationChannel();
-        updateNotification();
-        IntentFilter filter = new IntentFilter("AUDIO_CONTROL");
-        registerReceiver(notificationActionReceiver, filter);
+        updateNotification(); // 初期状態でも通知を表示（STOP状態）
     }
 
     @Override
@@ -77,53 +62,16 @@ public class AudioService extends Service {
         try {
             Uri uri = Uri.parse(filePath);
             mediaPlayer.setDataSource(getApplicationContext(), uri);
-            mediaPlayer.setOnPreparedListener(mp -> {
-                mp.start();
-                currentFile = filePath;
-                playbackStatus = "PLAY";
-                updateNotification();
-                sendStateBroadcast("PLAY");
-                startTimer();
-            });
-            mediaPlayer.prepareAsync();
+            mediaPlayer.prepare();
+            mediaPlayer.start();
+            currentFile = filePath;
+            playbackStatus = "PLAY";
+            updateNotification();
+            sendStateBroadcast("PLAY");
         } catch (Exception e) {
             Log.e(TAG, "Error in playAudio", e);
             playbackStatus = "STOP";
             updateNotification();
-        }
-    }
-
-    private void startTimer() {
-        handler.removeCallbacks(updateTimeTask);
-        handler.postDelayed(updateTimeTask, 1000);
-    }
-
-    private Runnable updateTimeTask = new Runnable() {
-        @Override
-        public void run() {
-            if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-                int currentPosition = mediaPlayer.getCurrentPosition();
-                updateNotification(currentPosition / 1000.0, mediaPlayer.getDuration() / 1000.0);
-                handler.postDelayed(this, 1000);
-            } else {
-                handler.removeCallbacks(this);
-            }
-        }
-    };
-
-    public void playOrPause() {
-        if (playbackStatus.equals("PLAY")) {
-            pauseAudio();
-        } else {
-            if (playbackStatus.equals("PAUSE")) {
-                mediaPlayer.start();
-            } else if (currentFile != null) {
-                playAudio(currentFile);
-            }
-            playbackStatus = "PLAY";
-            updateNotification();
-            sendStateBroadcast("PLAY");
-            startTimer();
         }
     }
 
@@ -134,7 +82,6 @@ public class AudioService extends Service {
             playbackStatus = "PAUSE";
             updateNotification();
             sendStateBroadcast("PAUSE");
-            handler.removeCallbacks(updateTimeTask);
         }
     }
 
@@ -146,58 +93,41 @@ public class AudioService extends Service {
             mediaPlayer = null;
             currentFile = null;
             playbackStatus = "STOP";
-            updateNotification(0, 0);
-            sendStateBroadcast("STOP");
-            handler.removeCallbacks(updateTimeTask);
-        }
-    }
-
-    public void seekTo(double time) {
-        if (mediaPlayer != null) {
-            mediaPlayer.seekTo((int) (time * 1000));
             updateNotification();
+            sendStateBroadcast("STOP");
         }
-    }
-
-    public void updatePlaybackInfo(double currentTime, double duration, String state) {
-        playbackStatus = state;
-        updateNotification(currentTime, duration);
-    }
-
-    public void setDuration(double duration) {
-        updateNotification(0, duration);
     }
 
     private void updateNotification() {
-        updateNotification(mediaPlayer == null ? 0 : mediaPlayer.getCurrentPosition() / 1000.0, 
-                           mediaPlayer == null ? 0 : mediaPlayer.getDuration() / 1000.0);
-    }
-
-    private void updateNotification(double currentTime, double duration) {
         int iconRes;
-        String notificationText = currentFile != null ? "Now playing: " + currentFile : "No track playing";
-        String formattedCurrentTime = formatTime((int) currentTime);
-        String formattedDuration = formatTime((int) duration);
+        String notificationText = "No track playing";
+        String currentTime = "00:00";
+        String duration = "00:00";
 
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             iconRes = R.drawable.ic_playing;
+            notificationText = "Now playing: " + currentFile;
+            currentTime = formatTime(mediaPlayer.getCurrentPosition() / 1000);
+            duration = formatTime(mediaPlayer.getDuration() / 1000);
         } else if (playbackStatus.equals("PAUSE")) {
             iconRes = R.drawable.ic_paused;
+            notificationText = "Paused: " + currentFile;
+            currentTime = formatTime(mediaPlayer.getCurrentPosition() / 1000);
+            duration = formatTime(mediaPlayer.getDuration() / 1000);
         } else {
             iconRes = R.drawable.ic_stopped;
-            formattedCurrentTime = "00:00";
-            formattedDuration = "00:00";
         }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("MP3 Player")
                 .setContentText(notificationText)
                 .setSmallIcon(iconRes)
-                .addAction(createAction(playbackStatus.equals("PLAY") ? "⏸ Pause" : "▶ Play", "PLAY_OR_PAUSE"))
+                .addAction(createAction("▶ Play", "PLAY"))
+                .addAction(createAction("⏸ Pause", "PAUSE"))
                 .addAction(createAction("⏹ Stop", "STOP"))
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOngoing(playbackStatus.equals("PLAY"))
-                .setContentText(notificationText + " - " + formattedCurrentTime + "/" + formattedDuration)
+                .setContentText(notificationText + " - " + currentTime + "/" + duration)
                 .setContentIntent(getPendingIntent())
                 .build();
 
@@ -241,19 +171,12 @@ public class AudioService extends Service {
         sendBroadcast(intent);
     }
 
-    private void performAction(String action) {
-        switch (action) {
-            case "PLAY_OR_PAUSE":
-                if (playbackStatus.equals("PLAY")) {
-                    pauseAudio();
-                } else {
-                    playOrPause();
-                }
-                break;
-            case "STOP":
-                stopAudio();
-                break;
-        }
+    public long getCurrentPosition() {
+        return mediaPlayer != null ? mediaPlayer.getCurrentPosition() : 0;
+    }
+
+    public String getCurrentFile() {
+        return currentFile;
     }
 
     @Override
@@ -263,18 +186,8 @@ public class AudioService extends Service {
             mediaPlayer.release();
             mediaPlayer = null;
         }
-        stopForeground(Service.STOP_FOREGROUND_REMOVE);
+        stopForeground(true);
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         manager.cancel(NOTIFICATION_ID);
-        unregisterReceiver(notificationActionReceiver);
-        handler.removeCallbacksAndMessages(null);
-    }
-
-    public String getCurrentFile() {
-        return currentFile;
-    }
-
-    public String getPlaybackStatus() {
-        return playbackStatus;
     }
 }
