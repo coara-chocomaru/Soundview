@@ -107,14 +107,14 @@ public class AudioService extends Service {
         int iconRes;
         switch (playbackStatus) {
             case "PLAY":
-                // システムアイコンを利用
-                iconRes = android.R.drawable.ic_media_play;
+
+                iconRes = android.R.drawable.ic_playing;
                 break;
             case "PAUSE":
-                iconRes = android.R.drawable.ic_media_pause;
+                iconRes = android.R.drawable.ic_paused;
                 break;
             default:
-                iconRes = android.R.drawable.ic_media_stop;
+                iconRes = android.R.drawable.ic_stopped;
         }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
