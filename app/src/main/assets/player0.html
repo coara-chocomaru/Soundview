@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Notification Data Provider</title>
+</head>
+<body>
+    <script>
+        const audioPlayer = document.getElementById('audioPlayer');
+        let selectedFile = null;
+
+        // 再生情報の更新を通知
+        function updatePlaybackInfo(currentTime, duration, state) {
+            Android.updatePlaybackInfo(currentTime, duration, state);
+        }
+
+        // 再生操作の通知
+        function notifyPlay(filePath) {
+            Android.playAudio(filePath);
+        }
+
+        function notifyPause() {
+            Android.pauseAudio();
+        }
+
+        function notifyStop() {
+            Android.stopAudio();
+        }
+
+        // シークバーの更新を通知
+        function notifySeek(newTime) {
+            Android.seekTo(newTime);
+        }
+
+        // 再生完了の通知
+        function notifyPlaybackEnded() {
+            notifyStop();
+        }
+
+        // 時間の形式をMM:SSに変換する
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // ファイル選択時の処理（ファイル選択が通知用HTMLで必要な場合）
+        function onFileSelected(filePath) {
+            selectedFile = filePath;
+            Android.setDuration(audioPlayer.duration);
+        }
+
+        // これらの関数は外部（player.html）から呼び出されることを想定しています
+    </script>
+</body>
+</html>
