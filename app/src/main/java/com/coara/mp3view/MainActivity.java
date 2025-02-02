@@ -78,7 +78,6 @@ public class MainActivity extends AppCompatActivity {
                 }
                 if (audioService != null) {
                     audioService.playAudio(uri.toString());
-                    // ファイル選択を通知
                     webView.evaluateJavascript("window.onFileSelected('" + uri.toString() + "');", null);
                 }
             }
@@ -130,6 +129,11 @@ public class MainActivity extends AppCompatActivity {
         @android.webkit.JavascriptInterface
         public void playOrPause() {
             if (audioService != null) {
+                if (audioService.getPlaybackStatus().equals("PLAY")) {
+                    webView.evaluateJavascript("document.getElementById('pauseBtn').click();", null);
+                } else {
+                    webView.evaluateJavascript("document.getElementById('playBtn').click();", null);
+                }
                 audioService.playOrPause();
             }
         }
@@ -137,6 +141,7 @@ public class MainActivity extends AppCompatActivity {
         @android.webkit.JavascriptInterface
         public void stop() {
             if (audioService != null) {
+                webView.evaluateJavascript("document.getElementById('stopBtn').click();", null);
                 audioService.stopAudio();
             }
         }
