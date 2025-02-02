@@ -4,13 +4,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- WebView の ID は "webView" で、MainActivity.java で参照されています -->
     <WebView
         android:id="@+id/webView"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- PiP モードのボタン -->
+
     <Button
         android:id="@+id/pip_button"
         android:layout_width="wrap_content"
@@ -18,6 +17,6 @@
         android:layout_gravity="bottom|right"
         android:layout_margin="16dp"
         android:text="PiPモード"
-        android:visibility="gone" /> <!-- 必要に応じて表示/非表示を切り替える -->
-
+        android:visibility="gone" /> 
+    
 </FrameLayout>
