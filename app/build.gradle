@@ -9,7 +9,7 @@ android {
 
     defaultConfig {
         minSdk = 23  
-        targetSdk = 24 
+        targetSdk = 33
         versionCode = 1
         versionName = "1.0"
         multiDexEnabled = true
