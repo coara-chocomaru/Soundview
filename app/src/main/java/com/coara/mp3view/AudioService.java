@@ -57,10 +57,13 @@ public class AudioService extends Service {
     public void playAudio(String filePath) {
         if (filePath == null || filePath.isEmpty()) return;
         Log.d(TAG, "playAudio: " + filePath);
+        
+        // メディアプレイヤーがすでに存在する場合はリリース
         if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;
         }
+
         mediaPlayer = new MediaPlayer();
         try {
             Uri uri = Uri.parse(filePath);
@@ -107,14 +110,13 @@ public class AudioService extends Service {
         int iconRes;
         switch (playbackStatus) {
             case "PLAY":
-
-                iconRes = R.drawable.ic_playing;
+                iconRes = android.R.drawable.ic_media_play;
                 break;
             case "PAUSE":
-                iconRes = R.drawable.ic_paused;
+                iconRes = android.R.drawable.ic_media_pause;
                 break;
             default:
-                iconRes = R.drawable.ic_stopped;
+                iconRes = android.R.drawable.ic_media_stop;
         }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
