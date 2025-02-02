@@ -180,6 +180,8 @@
                 audioPlayer.load();
                 audioPlayer.pause();
                 updateDurationDisplay();
+                // ファイル選択を通知
+                window.onFileSelected(fileURL);
             }
         });
 
@@ -189,6 +191,8 @@
                 audioPlayer.play();
                 waveAnimation.classList.remove('hidden');
                 playBtn.textContent = '⏸ Pause';
+                // 再生開始を通知
+                updateNotification('PLAY');
             } else {
                 alert("Please select an MP3 file first.");
             }
@@ -199,6 +203,8 @@
             audioPlayer.pause();
             waveAnimation.classList.add('hidden');
             playBtn.textContent = '▶ Play';
+            // 一時停止を通知
+            updateNotification('PAUSE');
         });
 
         // 停止ボタン
@@ -207,12 +213,16 @@
             audioPlayer.currentTime = 0;
             waveAnimation.classList.add('hidden');
             playBtn.textContent = '▶ Play';
+            // 停止を通知
+            updateNotification('STOP');
         });
 
         // 再生終了後の処理
         audioPlayer.addEventListener('ended', function() {
             waveAnimation.classList.add('hidden');
             playBtn.textContent = '▶ Play';
+            // 再生終了を通知
+            updateNotification('STOP');
         });
 
         // 再生時間とシークバーの同期
@@ -220,12 +230,16 @@
             const value = (audioPlayer.currentTime / audioPlayer.duration) * 100;
             seekBar.value = value;
             updateTimeDisplay();
+            // 時間更新を通知
+            window.updateTimeDisplay(formatTime(audioPlayer.currentTime));
         });
 
         // シークバーを操作して再生位置を変更
         seekBar.addEventListener('input', function() {
             const newTime = (seekBar.value / 100) * audioPlayer.duration;
             audioPlayer.currentTime = newTime;
+            // シーク操作を通知
+            window.seekTo(newTime);
         });
 
         // 再生時間と現在の再生位置を表示する
@@ -248,7 +262,14 @@
             if (audioPlayer.duration) {
                 const duration = formatTime(audioPlayer.duration);
                 durationDisplay.textContent = duration;
+                // 総再生時間を設定
+                window.setDuration(audioPlayer.duration);
             }
+        }
+
+        // player0.htmlへの通知関数
+        function updateNotification(state) {
+            window.updateNotification(state);
         }
     </script>
 </body>
