@@ -123,6 +123,7 @@ public class AudioService extends Service {
             playbackStatus = "PLAY";
             updateNotification();
             sendStateBroadcast("PLAY");
+            startTimer();
         }
     }
 
@@ -164,8 +165,8 @@ public class AudioService extends Service {
     }
 
     public void setDuration(double duration) {
-    updateNotification(0, duration);
-}
+        updateNotification(0, duration);
+    }
 
     private void updateNotification() {
         updateNotification(mediaPlayer == null ? 0 : mediaPlayer.getCurrentPosition() / 1000.0, 
@@ -243,7 +244,11 @@ public class AudioService extends Service {
     private void performAction(String action) {
         switch (action) {
             case "PLAY_OR_PAUSE":
-                playOrPause();
+                if (playbackStatus.equals("PLAY")) {
+                    pauseAudio();
+                } else {
+                    playOrPause();
+                }
                 break;
             case "STOP":
                 stopAudio();
