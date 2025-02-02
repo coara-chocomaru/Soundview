@@ -16,9 +16,8 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
 import android.util.Log;
-import androidx.media.session.MediaSessionCompat;
-import androidx.media.session.PlaybackStateCompat;
-import androidx.annotation.IntDef;
+import androidx.media3.session.MediaSession;
+import androidx.media3.common.Player;
 
 public class AudioService extends Service {
     private static final String TAG = "AudioService";
@@ -27,9 +26,8 @@ public class AudioService extends Service {
     private static final String CHANNEL_ID = "AudioServiceChannel";
     private static final int NOTIFICATION_ID = 1;
     private String currentFile = null;
-    private String playbackStatus = "STOP"; // 初期状態はSTOP
-    private MediaSessionCompat mediaSession;
-    private PlaybackStateCompat.Builder stateBuilder;
+    private String playbackStatus = "STOP"; // Initial state is STOP
+    private MediaSession mediaSession;
 
     public class AudioBinder extends Binder {
         public AudioService getService() {
@@ -42,33 +40,25 @@ public class AudioService extends Service {
         super.onCreate();
         Log.d(TAG, "onCreate");
 
-        // メディアセッションの設定
-        mediaSession = new MediaSessionCompat(this, "MediaSessionTag");
-        mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
-        mediaSession.setCallback(new MediaSessionCompat.Callback() {
+        mediaSession = new MediaSession(this);
+        mediaSession.setPlayer(new Player() {
             @Override
-            public void onPlay() {
+            public void play() {
                 playAudio(currentFile != null ? currentFile : "");
             }
 
             @Override
-            public void onPause() {
+            public void pause() {
                 pauseAudio();
             }
 
             @Override
-            public void onStop() {
+            public void stop() {
                 stopAudio();
             }
         });
         mediaSession.setActive(true);
 
-        // 再生状態の設定
-        stateBuilder = new PlaybackStateCompat.Builder()
-                .setActions(PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_STOP);
-        mediaSession.setPlaybackState(stateBuilder.build());
-
-        // 通知チャネルの作成
         createNotificationChannel();
     }
 
@@ -99,13 +89,11 @@ public class AudioService extends Service {
             currentFile = filePath;
             playbackStatus = "PLAY";
             updateNotification();
-            updatePlaybackState(PlaybackStateCompat.STATE_PLAYING);
             sendStateBroadcast("PLAY");
         } catch (Exception e) {
             Log.e(TAG, "Error in playAudio", e);
             playbackStatus = "STOP";
             updateNotification();
-            updatePlaybackState(PlaybackStateCompat.STATE_STOPPED);
         }
     }
 
@@ -115,7 +103,6 @@ public class AudioService extends Service {
             mediaPlayer.pause();
             playbackStatus = "PAUSE";
             updateNotification();
-            updatePlaybackState(PlaybackStateCompat.STATE_PAUSED);
             sendStateBroadcast("PAUSE");
         }
     }
@@ -129,7 +116,6 @@ public class AudioService extends Service {
             currentFile = null;
             playbackStatus = "STOP";
             updateNotification();
-            updatePlaybackState(PlaybackStateCompat.STATE_STOPPED);
             sendStateBroadcast("STOP");
         }
     }
@@ -154,7 +140,6 @@ public class AudioService extends Service {
             iconRes = R.drawable.ic_stopped;
         }
 
-        // 通知の作成
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("MP3 Player")
                 .setContentText(notificationText)
@@ -206,11 +191,6 @@ public class AudioService extends Service {
         Intent intent = new Intent("ACTION_AUDIO_STATE");
         intent.putExtra("state", state);
         sendBroadcast(intent);
-    }
-
-    private void updatePlaybackState(@PlaybackStateCompat.State int newState) {
-        stateBuilder.setState(newState, mediaPlayer != null ? mediaPlayer.getCurrentPosition() : 0, 1.0f);
-        mediaSession.setPlaybackState(stateBuilder.build());
     }
 
     @Override
