@@ -6,6 +6,7 @@ import android.media.MediaPlayer;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.net.Uri;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -26,7 +27,7 @@ public class AudioService extends Service {
     private static final int NOTIFICATION_ID = 1;
     private String currentFile = null;
     private String playbackStatus = "STOP";
-    private Handler handler = new Handler();
+    private Handler handler = new Handler(Looper.getMainLooper());
 
     private final BroadcastReceiver notificationActionReceiver = new BroadcastReceiver() {
         @Override
