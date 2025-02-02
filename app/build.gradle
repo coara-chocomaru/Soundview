@@ -60,6 +60,7 @@ dependencies {
     implementation 'com.google.android.material:material:1.10.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.webkit:webkit:1.10.0'  // WebViewの最新APIを使う
-    implementation "androidx.media:media:1.5.0"
+    implementation 'androidx.core:core:1.8.0'
+　　 implementation 'androidx.media:media:1.6.0
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
 }
