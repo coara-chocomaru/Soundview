@@ -111,6 +111,21 @@ public class AudioService extends Service {
         }
     };
 
+    public void playOrPause() {
+        if (playbackStatus.equals("PLAY")) {
+            pauseAudio();
+        } else {
+            if (playbackStatus.equals("PAUSE")) {
+                mediaPlayer.start();
+            } else if (currentFile != null) {
+                playAudio(currentFile);
+            }
+            playbackStatus = "PLAY";
+            updateNotification();
+            sendStateBroadcast("PLAY");
+        }
+    }
+
     public void pauseAudio() {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             Log.d(TAG, "pauseAudio");
@@ -168,8 +183,7 @@ public class AudioService extends Service {
                 .setContentTitle("MP3 Player")
                 .setContentText(notificationText)
                 .setSmallIcon(iconRes)
-                .addAction(createAction("▶ Play", "PLAY"))
-                .addAction(createAction("⏸ Pause", "PAUSE"))
+                .addAction(createAction(playbackStatus.equals("PLAY") ? "⏸ Pause" : "▶ Play", "PLAY_OR_PAUSE"))
                 .addAction(createAction("⏹ Stop", "STOP"))
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOngoing(playbackStatus.equals("PLAY"))
@@ -219,18 +233,8 @@ public class AudioService extends Service {
 
     private void performAction(String action) {
         switch (action) {
-            case "PLAY":
-                if (playbackStatus.equals("PAUSE")) {
-                    mediaPlayer.start();
-                } else if (currentFile != null) {
-                    playAudio(currentFile);
-                }
-                playbackStatus = "PLAY";
-                updateNotification();
-                sendStateBroadcast("PLAY");
-                break;
-            case "PAUSE":
-                pauseAudio();
+            case "PLAY_OR_PAUSE":
+                playOrPause();
                 break;
             case "STOP":
                 stopAudio();
@@ -252,8 +256,11 @@ public class AudioService extends Service {
         handler.removeCallbacksAndMessages(null);
     }
 
-    // 新しく追加されたメソッド
     public String getCurrentFile() {
         return currentFile;
+    }
+
+    public String getPlaybackStatus() {
+        return playbackStatus;
     }
 }
