@@ -22,7 +22,6 @@ import android.util.Log;
 import android.content.ServiceConnection;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
-
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private WebView webView;
@@ -71,7 +70,7 @@ public class MainActivity extends AppCompatActivity {
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
-            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
+            public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> filePathCallback, WebChromeClient.FileChooserParams fileChooserParams) {
                 MainActivity.this.filePathCallback = filePathCallback;
                 Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
                 intent.addCategory(Intent.CATEGORY_OPENABLE);
@@ -129,6 +128,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onStop() {
+                // STOP action is not available in the notification, but we keep this for potential use in other contexts
                 if (audioService != null) {
                     audioService.stopAudio();
                 }
@@ -159,8 +159,7 @@ public class MainActivity extends AppCompatActivity {
 
         PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder()
                 .setActions(PlaybackStateCompat.ACTION_PLAY | 
-                            PlaybackStateCompat.ACTION_PAUSE | 
-                            PlaybackStateCompat.ACTION_STOP)
+                            PlaybackStateCompat.ACTION_PAUSE)
                 .setState(stateCode, position, 1.0f);
         mediaSession.setPlaybackState(stateBuilder.build());
     }
