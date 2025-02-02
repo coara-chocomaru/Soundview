@@ -24,6 +24,7 @@ import android.content.ServiceConnection;
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private WebView webView;
+    private WebView notificationWebView; // 通知用WebView
     private ValueCallback<Uri[]> filePathCallback;
     private ActivityResultLauncher<Intent> filePickerLauncher;
     private AudioService audioService;
@@ -36,19 +37,14 @@ public class MainActivity extends AppCompatActivity {
             String state = intent.getStringExtra("state");
             Log.d(TAG, "Audio state received: " + state);
             if (state != null) {
-                // WebViewを更新するJavaScript呼び出し
-                switch (state) {
-                    case "PLAY":
-                        webView.evaluateJavascript("document.getElementById('waveAnimation').classList.remove('hidden');", null);
-                        break;
-                    case "PAUSE":
-                        webView.evaluateJavascript("document.getElementById('waveAnimation').classList.add('hidden');", null);
-                        break;
-                    case "STOP":
-                        webView.evaluateJavascript("document.getElementById('waveAnimation').classList.add('hidden');", null);
-                        webView.evaluateJavascript("document.getElementById('audioPlayer').pause(); document.getElementById('audioPlayer').currentTime = 0;", null);
-                        break;
-                }
+                // player.htmlを更新
+                webView.evaluateJavascript("updateNotification('" + state + "');", null);
+                // player0.htmlを更新
+                notificationWebView.evaluateJavascript("updatePlaybackInfo(" +
+                        (audioService != null && audioService.getMediaPlayer() != null ? 
+                                audioService.getMediaPlayer().getCurrentPosition() / 1000.0 : 0) + "," +
+                        (audioService != null && audioService.getMediaPlayer() != null ? 
+                                audioService.getMediaPlayer().getDuration() / 1000.0 : 0) + ",'" + state + "');", null);
             }
         }
     };
@@ -59,7 +55,14 @@ public class MainActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             if (intent.getAction() != null && intent.getAction().equals("ACTION_TIME_UPDATE")) {
                 int position = intent.getIntExtra("position", 0);
+                // player.htmlに時間情報を送信
                 webView.evaluateJavascript("updateTimeDisplay('" + formatTime(position / 1000) + "');", null);
+                // player0.htmlに時間情報を送信
+                notificationWebView.evaluateJavascript("updatePlaybackInfo(" + 
+                        (position / 1000.0) + "," +
+                        (audioService != null && audioService.getMediaPlayer() != null ? 
+                                audioService.getMediaPlayer().getDuration() / 1000.0 : 0) + 
+                        ",'" + (audioService != null ? audioService.getPlaybackStatus() : "STOP") + "');", null);
             }
         }
     };
@@ -86,8 +89,21 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        webView.addJavascriptInterface(new WebAppInterface(), "Android");
+        // player.htmlを読み込み
         webView.loadUrl("file:///android_asset/player.html");
+
+        // 通知用WebViewの設定
+        notificationWebView = new WebView(this);
+        notificationWebView.setWebViewClient(new WebViewClient());
+        WebSettings notificationWebViewSettings = notificationWebView.getSettings();
+        notificationWebViewSettings.setJavaScriptEnabled(true);
+        notificationWebViewSettings.setAllowFileAccess(true);
+        // player0.htmlを読み込み
+        notificationWebView.loadUrl("file:///android_asset/player0.html");
+
+        // JavaScriptインターフェースの登録
+        webView.addJavascriptInterface(new WebAppInterface(), "Android");
+        notificationWebView.addJavascriptInterface(new WebAppInterface(), "Android");
 
         filePickerLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
             if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
@@ -109,9 +125,9 @@ public class MainActivity extends AppCompatActivity {
 
     private class WebAppInterface {
         @android.webkit.JavascriptInterface
-        public void playAudio(String filePath) {
+        public void playAudio() {
             if (audioService != null) {
-                audioService.playAudio(filePath);
+                audioService.playAudio(currentFile());
             }
         }
 
@@ -130,9 +146,9 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @android.webkit.JavascriptInterface
-        public void updatePlaybackTime(double time) {
+        public void updatePlaybackInfo(double currentTime, double duration, String state) {
             if (audioService != null) {
-                audioService.updatePlaybackTime(time);
+                audioService.updatePlaybackInfo(currentTime, duration, state);
             }
         }
 
@@ -171,6 +187,11 @@ public class MainActivity extends AppCompatActivity {
         int minutes = seconds / 60;
         int secs = seconds % 60;
         return String.format("%02d:%02d", minutes, secs);
+    }
+
+    // 現在のファイルパスを取得するためのヘルパーメソッド
+    private String currentFile() {
+        return audioService != null ? audioService.getCurrentFile() : "";
     }
 
     @Override
