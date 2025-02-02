@@ -72,7 +72,7 @@ public class AudioService extends Service {
             mediaPlayer.start();
             currentFile = filePath;
             playbackStatus = "PLAY";
-            updateNotification();
+            updateNotification(); // 状態更新後に通知を更新
             sendStateBroadcast("PLAY");
         } catch (Exception e) {
             e.printStackTrace();
@@ -86,7 +86,7 @@ public class AudioService extends Service {
             Log.d(TAG, "pauseAudio");
             mediaPlayer.pause();
             playbackStatus = "PAUSE";
-            updateNotification();
+            updateNotification(); // 状態更新後に通知を更新
             sendStateBroadcast("PAUSE");
         }
     }
@@ -100,7 +100,7 @@ public class AudioService extends Service {
             mediaPlayer = null;
             currentFile = null;
             playbackStatus = "STOP";
-            updateNotification();
+            updateNotification(); // 状態更新後に通知を更新
             sendStateBroadcast("STOP");
         }
     }
@@ -183,7 +183,11 @@ public class AudioService extends Service {
             if (action != null) {
                 switch (action) {
                     case "PLAY":
-                        if (currentFile != null) {
+                        // もし現在再生中のファイルがない場合、再生ボタンで指定されたファイルを再生
+                        if (currentFile == null) {
+                            String filePath = intent.getStringExtra("filePath");  // ファイルパスを受け取って再生
+                            playAudio(filePath);
+                        } else {
                             playAudio(currentFile);
                         }
                         break;
