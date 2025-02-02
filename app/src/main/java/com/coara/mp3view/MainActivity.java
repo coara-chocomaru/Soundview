@@ -37,9 +37,7 @@ public class MainActivity extends AppCompatActivity {
             String state = intent.getStringExtra("state");
             Log.d(TAG, "Audio state received: " + state);
             if (state != null) {
-                // player.htmlを更新
                 webView.evaluateJavascript("updateNotification('" + state + "');", null);
-                // player0.htmlを更新
                 notificationWebView.evaluateJavascript("updatePlaybackInfo(" +
                         (audioService != null && audioService.getMediaPlayer() != null ? 
                                 audioService.getMediaPlayer().getCurrentPosition() / 1000.0 : 0) + "," +
@@ -55,9 +53,7 @@ public class MainActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             if (intent.getAction() != null && intent.getAction().equals("ACTION_TIME_UPDATE")) {
                 int position = intent.getIntExtra("position", 0);
-                // player.htmlに時間情報を送信
                 webView.evaluateJavascript("updateTimeDisplay('" + formatTime(position / 1000) + "');", null);
-                // player0.htmlに時間情報を送信
                 notificationWebView.evaluateJavascript("updatePlaybackInfo(" + 
                         (position / 1000.0) + "," +
                         (audioService != null && audioService.getMediaPlayer() != null ? 
@@ -102,8 +98,9 @@ public class MainActivity extends AppCompatActivity {
         notificationWebView.loadUrl("file:///android_asset/player0.html");
 
         // JavaScriptインターフェースの登録
-        webView.addJavascriptInterface(new WebAppInterface(), "Android");
-        notificationWebView.addJavascriptInterface(new WebAppInterface(), "Android");
+        WebAppInterface webAppInterface = new WebAppInterface();
+        webView.addJavascriptInterface(webAppInterface, "Android");
+        notificationWebView.addJavascriptInterface(webAppInterface, "Android");
 
         filePickerLauncher = registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
             if (result.getResultCode() == Activity.RESULT_OK && result.getData() != null) {
@@ -194,11 +191,6 @@ public class MainActivity extends AppCompatActivity {
         int minutes = seconds / 60;
         int secs = seconds % 60;
         return String.format("%02d:%02d", minutes, secs);
-    }
-
-    // 現在のファイルパスを取得するためのヘルパーメソッド
-    private String currentFile() {
-        return audioService != null ? audioService.getCurrentFile() : "";
     }
 
     @Override
