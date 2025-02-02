@@ -16,9 +16,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
 import android.util.Log;
-import androidx.media.session.MediaSessionCompat;
-import androidx.media.session.PlaybackStateCompat;
-import androidx.media.app.NotificationCompat.MediaStyle;
 
 public class AudioService extends Service {
     private static final String TAG = "AudioService";
@@ -28,7 +25,6 @@ public class AudioService extends Service {
     private static final int NOTIFICATION_ID = 1;
     private String currentFile = null;
     private String playbackStatus = "STOP"; // 初期状態はSTOP
-    private MediaSessionCompat mediaSession;
 
     public class AudioBinder extends Binder {
         public AudioService getService() {
@@ -41,12 +37,6 @@ public class AudioService extends Service {
         super.onCreate();
         Log.d(TAG, "onCreate");
         createNotificationChannel();
-        
-        // MediaSessionの初期化
-        mediaSession = new MediaSessionCompat(this, "MP3Player");
-        mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
-        mediaSession.setActive(true);
-        
         updateNotification(); // 初期状態でも通知を表示（STOP状態）
     }
 
@@ -77,26 +67,11 @@ public class AudioService extends Service {
             currentFile = filePath;
             playbackStatus = "PLAY";
             updateNotification();
-
-            // MediaSessionの再生状態を更新
-            PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder()
-                .setActions(PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_STOP)
-                .setState(PlaybackStateCompat.STATE_PLAYING, mediaPlayer.getCurrentPosition(), 1.0f);
-            mediaSession.setPlaybackState(stateBuilder.build());
-
             sendStateBroadcast("PLAY");
         } catch (Exception e) {
             Log.e(TAG, "Error in playAudio", e);
             playbackStatus = "STOP";
             updateNotification();
-
-            // MediaSessionの再生状態を更新
-            PlaybackStateCompat.Builder stateBuilder = new PlaybackStateCompat.Builder()
-                .setActions(PlaybackStateCompat.ACTION_PLAY | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_STOP)
-                .setState(PlaybackStateCompat.STATE_STOPPED, 0, 1.0f);
-            mediaSession.setPlaybackState(stateBuilder.build());
-
-            sendStateBroadcast("STOP");
         }
     }
 
@@ -153,7 +128,6 @@ public class AudioService extends Service {
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOngoing(playbackStatus.equals("PLAY"))
                 .setContentText(notificationText + " - " + currentTime + "/" + duration)
-                .setStyle(new MediaStyle().setMediaSession(mediaSession.getSessionToken()))
                 .setContentIntent(getPendingIntent())
                 .build();
 
@@ -167,9 +141,10 @@ public class AudioService extends Service {
     }
 
     private NotificationCompat.Action createAction(String title, String action) {
-        Intent intent = new Intent(this, AudioService.class);
+        Intent intent = new Intent("AUDIO_CONTROL");
         intent.putExtra("ACTION", action);
-        PendingIntent pendingIntent = PendingIntent.getService(this, action.hashCode(), intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(this, action.hashCode(),
+                intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         return new NotificationCompat.Action(0, title, pendingIntent);
     }
 
