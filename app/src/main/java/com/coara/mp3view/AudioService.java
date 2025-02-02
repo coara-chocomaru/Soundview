@@ -101,19 +101,13 @@ public class AudioService extends Service {
     private void updateNotification() {
         int iconRes;
         String notificationText = "No track playing";
-        String currentTime = "00:00";
-        String duration = "00:00";
 
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             iconRes = R.drawable.ic_playing;
             notificationText = "Now playing: " + currentFile;
-            currentTime = formatTime(mediaPlayer.getCurrentPosition() / 1000);
-            duration = formatTime(mediaPlayer.getDuration() / 1000);
         } else if (playbackStatus.equals("PAUSE")) {
             iconRes = R.drawable.ic_paused;
             notificationText = "Paused: " + currentFile;
-            currentTime = formatTime(mediaPlayer.getCurrentPosition() / 1000);
-            duration = formatTime(mediaPlayer.getDuration() / 1000);
         } else {
             iconRes = R.drawable.ic_stopped;
         }
@@ -124,20 +118,12 @@ public class AudioService extends Service {
                 .setSmallIcon(iconRes)
                 .addAction(createAction("▶ Play", "PLAY"))
                 .addAction(createAction("⏸ Pause", "PAUSE"))
-                // Removed Stop action as per request
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOngoing(playbackStatus.equals("PLAY") || playbackStatus.equals("PAUSE"))
-                .setContentText(notificationText + " - " + currentTime + "/" + duration)
                 .setContentIntent(getPendingIntent())
                 .build();
 
         startForeground(NOTIFICATION_ID, notification);
-    }
-
-    private String formatTime(int seconds) {
-        int minutes = seconds / 60;
-        int secs = seconds % 60;
-        return String.format("%02d:%02d", minutes, secs);
     }
 
     private NotificationCompat.Action createAction(String title, String action) {
