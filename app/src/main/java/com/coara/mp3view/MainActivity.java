@@ -22,6 +22,9 @@ import android.util.Log;
 import android.content.ServiceConnection;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+import android.graphics.Rect;
+import android.view.View;
+import android.widget.Button;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -30,9 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private ActivityResultLauncher<Intent> filePickerLauncher;
     private AudioService audioService;
     private boolean isBound = false;
-
     private MediaSessionCompat mediaSession;
-
     private final BroadcastReceiver audioStateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -77,6 +78,20 @@ public class MainActivity extends AppCompatActivity {
                 filePickerLauncher.launch(intent);
                 return true;
             }
+
+            @Override
+            public void onEnterPictureInPictureMode() {
+                super.onEnterPictureInPictureMode();
+                // Here you might want to inform the WebView or update UI outside of PiP mode
+                webView.evaluateJavascript("onEnterPiP();", null);
+            }
+
+            @Override
+            public void onExitPictureInPictureMode() {
+                super.onExitPictureInPictureMode();
+                // Here you might want to update UI or inform WebView that PiP mode has ended
+                webView.evaluateJavascript("onExitPiP();", null);
+            }
         });
 
         // JavaScriptインターフェースの登録
@@ -101,6 +116,23 @@ public class MainActivity extends AppCompatActivity {
 
         // MediaSessionの初期化
         initializeMediaSession();
+
+        // PiP mode setup
+        Button pipButton = findViewById(R.id.pip_button);
+        pipButton.setOnClickListener(v -> {
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                // Check if the activity supports PiP mode
+                if (isInPictureInPictureMode()) {
+                    // Exit PiP mode if already in it
+                    moveTaskToBack(true);
+                } else {
+                    // Enter PiP mode
+                    enterPictureInPictureMode(new PictureInPictureParams.Builder()
+                            .setAspectRatio(new Rational(16, 9))  // Set your appropriate aspect ratio
+                            .build());
+                }
+            }
+        });
 
         // AudioServiceからの再生状態ブロードキャスト受信用レシーバー登録
         registerReceiver(audioStateReceiver, new IntentFilter("ACTION_AUDIO_STATE"));
