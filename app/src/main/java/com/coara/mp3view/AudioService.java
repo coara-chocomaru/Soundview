@@ -32,11 +32,6 @@ public class AudioService extends Service {
             return AudioService.this;
         }
     }
-    
-    // 現在再生中のファイルURIを取得するgetter
-    public String getCurrentFile() {
-        return currentFile;
-    }
 
     @Override
     public void onCreate() {
@@ -57,7 +52,7 @@ public class AudioService extends Service {
     public void playAudio(String filePath) {
         if (filePath == null || filePath.isEmpty()) return;
         Log.d(TAG, "playAudio: " + filePath);
-        
+
         // メディアプレイヤーがすでに存在する場合はリリース
         if (mediaPlayer != null) {
             mediaPlayer.release();
