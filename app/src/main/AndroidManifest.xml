@@ -29,6 +29,15 @@
         <service
             android:name=".AudioService"
             android:exported="true"
-            android:foregroundServiceType="mediaPlayback"/>
+            android:foregroundServiceType="mediaPlayback">
+            <!-- インテントフィルター: サービスを起動するためのフィルター -->
+            <intent-filter>
+                <action android:name="com.coara.mp3view.ACTION_PLAY_AUDIO" />
+                <action android:name="com.coara.mp3view.ACTION_PAUSE_AUDIO" />
+                <action android:name="com.coara.mp3view.ACTION_STOP_AUDIO" />
+            </intent-filter>
+        </service>
+        
     </application>
+
 </manifest>
