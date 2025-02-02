@@ -46,12 +46,10 @@ public class AudioService extends Service {
         return binder;
     }
 
-    // 再生処理（URI文字列を受け取る）
     public void playAudio(String filePath) {
         if (filePath == null || filePath.isEmpty()) return;
         Log.d(TAG, "playAudio: " + filePath);
 
-        // メディアプレイヤーがすでに存在する場合はリリース
         if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;
@@ -65,7 +63,7 @@ public class AudioService extends Service {
             mediaPlayer.start();
             currentFile = filePath;
             playbackStatus = "PLAY";
-            updateNotification(); // 状態更新後に通知を更新
+            updateNotification();
             sendStateBroadcast("PLAY");
         } catch (Exception e) {
             e.printStackTrace();
@@ -73,18 +71,16 @@ public class AudioService extends Service {
         }
     }
 
-    // 一時停止処理
     public void pauseAudio() {
         if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             Log.d(TAG, "pauseAudio");
             mediaPlayer.pause();
             playbackStatus = "PAUSE";
-            updateNotification(); // 状態更新後に通知を更新
+            updateNotification();
             sendStateBroadcast("PAUSE");
         }
     }
 
-    // 停止処理
     public void stopAudio() {
         if (mediaPlayer != null) {
             Log.d(TAG, "stopAudio");
@@ -93,12 +89,11 @@ public class AudioService extends Service {
             mediaPlayer = null;
             currentFile = null;
             playbackStatus = "STOP";
-            updateNotification(); // 状態更新後に通知を更新
+            updateNotification();
             sendStateBroadcast("STOP");
         }
     }
 
-    // 通知更新処理
     private void updateNotification() {
         int iconRes;
         String notificationText = "No track playing";
@@ -134,14 +129,12 @@ public class AudioService extends Service {
         startForeground(NOTIFICATION_ID, notification);
     }
 
-    // 時間の形式をMM:SSに変換する
     private String formatTime(int seconds) {
         int minutes = seconds / 60;
         int secs = seconds % 60;
         return String.format("%02d:%02d", minutes, secs);
     }
 
-    // 通知用アクションボタンの生成
     private NotificationCompat.Action createAction(String title, String action) {
         Intent intent = new Intent("AUDIO_CONTROL");
         intent.putExtra("ACTION", action);
@@ -150,14 +143,12 @@ public class AudioService extends Service {
         return new NotificationCompat.Action(0, title, pendingIntent);
     }
 
-    // 通知タップ時のPendingIntent生成（MainActivityへ遷移）
     private PendingIntent getPendingIntent() {
         Intent intent = new Intent(this, MainActivity.class);
         return PendingIntent.getActivity(this, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
-    // 通知チャネルの生成（Android 8.0以上用）
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Audio Service", NotificationManager.IMPORTANCE_LOW);
@@ -168,14 +159,12 @@ public class AudioService extends Service {
         }
     }
 
-    // 現在の再生状態をブロードキャスト送信（MainActivity側でWebView更新用）
     private void sendStateBroadcast(String state) {
         Intent intent = new Intent("ACTION_AUDIO_STATE");
         intent.putExtra("state", state);
         sendBroadcast(intent);
     }
 
-    // 通知操作（PLAY／PAUSE／STOP）を受け取るレシーバー
     private final BroadcastReceiver notificationReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
