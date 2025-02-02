@@ -125,9 +125,9 @@ public class MainActivity extends AppCompatActivity {
 
     private class WebAppInterface {
         @android.webkit.JavascriptInterface
-        public void playAudio() {
+        public void playAudio(String filePath) {
             if (audioService != null) {
-                audioService.playAudio(currentFile());
+                audioService.playAudio(filePath);
             }
         }
 
