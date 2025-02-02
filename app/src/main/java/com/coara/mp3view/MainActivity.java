@@ -20,8 +20,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.view.KeyEvent;
 import android.util.Log;
 import android.content.ServiceConnection;
-import android.support.v4.media.session.MediaSessionCompat;
-import android.support.v4.media.session.PlaybackStateCompat;
+import androidx.media.session.MediaSessionCompat;
+import androidx.media.session.PlaybackStateCompat;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -102,6 +102,29 @@ public class MainActivity extends AppCompatActivity {
 
         // MediaSessionの設定
         mediaSession = new MediaSessionCompat(this, "MediaSessionTag");
+        mediaSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS | MediaSessionCompat.FLAG_HANDLES_TRANSPORT_CONTROLS);
+        mediaSession.setCallback(new MediaSessionCompat.Callback() {
+            @Override
+            public void onPlay() {
+                if (audioService != null) {
+                    audioService.playAudio(""); // ここでは仮のファイルパスを使用しています
+                }
+            }
+
+            @Override
+            public void onPause() {
+                if (audioService != null) {
+                    audioService.pauseAudio();
+                }
+            }
+
+            @Override
+            public void onStop() {
+                if (audioService != null) {
+                    audioService.stopAudio();
+                }
+            }
+        });
         mediaSession.setActive(true);
 
         // 再生状態の設定
@@ -170,9 +193,15 @@ public class MainActivity extends AppCompatActivity {
             unbindService(serviceConnection);
             isBound = false;
         }
-        unregisterReceiver(audioStateReceiver);
+        try {
+            unregisterReceiver(audioStateReceiver);
+        } catch (IllegalArgumentException e) {
+            Log.e(TAG, "Receiver was not registered.", e);
+        }
 
         // MediaSessionの破棄
-        mediaSession.release();
+        if (mediaSession != null) {
+            mediaSession.release();
+        }
     }
 }
