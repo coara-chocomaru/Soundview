@@ -10,7 +10,7 @@
       box-sizing: border-box;
     }
 
-    /* ダークマテリアルデザイン */
+  
     body {
       font-family: 'Roboto', sans-serif;
       display: flex;
@@ -25,9 +25,9 @@
       transition: background 0.5s ease;
     }
 
-    /* 背景アニメーション：5種類のパターン */
+    
 
-    /* パターン1：パルス風グラデーション */
+    
     .bg-animation-1 {
       animation: bg-animation-1 3s infinite ease-in-out;
     }
@@ -37,7 +37,7 @@
       100% { background: linear-gradient(135deg, #121212, #1e1e1e); }
     }
 
-    /* パターン2：横方向にシフトするグラデーション */
+    
     .bg-animation-2 {
       background: linear-gradient(45deg, #ff6b6b, #f7d794);
       background-size: 200% 200%;
@@ -49,7 +49,7 @@
       100% { background-position: 0% 50%; }
     }
 
-    /* パターン3：背景位置がゆっくりズーム・シフト */
+    
     .bg-animation-3 {
       background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
       background-size: 150% 150%;
@@ -61,7 +61,7 @@
       100% { background-position: 0% 0%; }
     }
 
-    /* パターン4：カラーチェンジによるムーディーなエフェクト */
+    
     .bg-animation-4 {
       animation: bg-animation-4 7s linear infinite;
     }
@@ -73,7 +73,7 @@
       100% { background-color: #1a2a6c; }
     }
 
-    /* パターン5：大きくシマーするグラデーション */
+    
     .bg-animation-5 {
       background: linear-gradient(135deg, #667eea, #764ba2);
       background-size: 400% 400%;
@@ -85,7 +85,7 @@
       100% { background-position: 0% 50%; }
     }
 
-    /* プレイヤーコンテナ */
+    
     .player-container {
       text-align: center;
       background: rgba(40, 40, 40, 0.9);
@@ -157,7 +157,7 @@
       height: 30px;
       margin: 0 4px;
       background: #03dac6;
-      /* animationは再生時にJSでランダム設定 */
+      
     }
 
     /* 複数の波形アニメーション定義 */
@@ -273,7 +273,7 @@
     // 背景アニメーションのランダム設定
     function setRandomBackgroundAnimation() {
       const classes = ["bg-animation-1", "bg-animation-2", "bg-animation-3", "bg-animation-4", "bg-animation-5"];
-      // 既存のbg-animation-*クラスを除去
+
       classes.forEach(cls => document.body.classList.remove(cls));
       const randomClass = classes[Math.floor(Math.random() * classes.length)];
       document.body.classList.add(randomClass);
