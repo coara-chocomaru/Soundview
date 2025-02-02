@@ -27,7 +27,7 @@ public class MainActivity extends AppCompatActivity {
     private AudioService audioService;
     private boolean isBound = false;
 
-    // BroadcastReceiver：AudioServiceから送信された再生状態に応じてHTML内のaudio要素等を更新
+    // BroadcastReceiver：AudioServiceからの再生状態ブロードキャストを受信し、WebView内の再生状態を更新
     private final BroadcastReceiver audioStateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -35,17 +35,17 @@ public class MainActivity extends AppCompatActivity {
             if (state != null) {
                 switch (state) {
                     case "PLAY":
-                        // HTML内のaudio要素を再生し、波形アニメーションを表示
+                        // WebView内のaudio要素を再生、波形アニメーション表示
                         webView.evaluateJavascript("document.getElementById('audioPlayer').play();", null);
                         webView.evaluateJavascript("document.getElementById('waveAnimation').classList.remove('hidden');", null);
                         break;
                     case "PAUSE":
-                        // HTML内のaudio要素を一時停止し、波形アニメーションを非表示
+                        // WebView内のaudio要素を一時停止、波形アニメーション非表示
                         webView.evaluateJavascript("document.getElementById('audioPlayer').pause();", null);
                         webView.evaluateJavascript("document.getElementById('waveAnimation').classList.add('hidden');", null);
                         break;
                     case "STOP":
-                        // HTML内のaudio要素を停止（停止状態＝一時停止＋先頭へ戻す）し、波形アニメーションを非表示
+                        // WebView内のaudio要素を停止（先頭に戻す）し、波形アニメーション非表示
                         webView.evaluateJavascript("document.getElementById('audioPlayer').pause(); document.getElementById('audioPlayer').currentTime = 0;", null);
                         webView.evaluateJavascript("document.getElementById('waveAnimation').classList.add('hidden');", null);
                         break;
@@ -59,14 +59,14 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // WebViewの設定
+        // WebViewの初期化
         webView = findViewById(R.id.webView);
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setAllowFileAccess(true);
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient() {
-            // ファイル選択用（<input type="file">から呼ばれる）
+            // <input type="file">からのファイル選択に対応
             @Override
             public boolean onShowFileChooser(WebView view, ValueCallback<Uri[]> filePathCallback, FileChooserParams fileChooserParams) {
                 MainActivity.this.filePathCallback = filePathCallback;
@@ -78,7 +78,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // JavaScriptインターフェースの登録
+        // JavaScriptインターフェース登録
         webView.addJavascriptInterface(new WebAppInterface(), "Android");
         webView.loadUrl("file:///android_asset/player.html");
 
@@ -93,12 +93,12 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // AudioServiceの開始とバインド
+        // AudioServiceの起動とバインド
         Intent serviceIntent = new Intent(this, AudioService.class);
         startService(serviceIntent);
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
 
-        // AudioServiceからの再生状態ブロードキャストを受信
+        // AudioServiceからの再生状態ブロードキャスト受信用にレシーバー登録
         registerReceiver(audioStateReceiver, new IntentFilter("ACTION_AUDIO_STATE"));
     }
 
@@ -110,14 +110,12 @@ public class MainActivity extends AppCompatActivity {
                 audioService.playAudio(filePath);
             }
         }
-
         @android.webkit.JavascriptInterface
         public void pauseAudio() {
             if (audioService != null) {
                 audioService.pauseAudio();
             }
         }
-
         @android.webkit.JavascriptInterface
         public void stopAudio() {
             if (audioService != null) {
@@ -140,7 +138,7 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
-    // 戻るボタン無効（必要に応じて）
+    // 戻るキーの無効化（必要に応じて）
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
