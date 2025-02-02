@@ -130,17 +130,29 @@ public class MainActivity extends AppCompatActivity {
         @android.webkit.JavascriptInterface
         public void playOrPause() {
             if (audioService != null) {
-                if (audioService.getPlaybackStatus().equals("PLAY")) {
-                    webView.evaluateJavascript("document.getElementById('pauseBtn').click();", null);
-                } else {
-                    webView.evaluateJavascript("document.getElementById('playBtn').click();", null);
-                }
+                audioService.playOrPause();
             }
         }
 
         @android.webkit.JavascriptInterface
         public void stop() {
-            webView.evaluateJavascript("document.getElementById('stopBtn').click();", null);
+            if (audioService != null) {
+                audioService.stopAudio();
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        public void updatePlaybackInfo(double currentTime, double duration, String state) {
+            if (audioService != null) {
+                audioService.updatePlaybackInfo(currentTime, duration, state);
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        public void setDuration(double duration) {
+            if (audioService != null) {
+                audioService.setDuration(duration);
+            }
         }
     }
 
