@@ -1,7 +1,6 @@
 package com.coara.mp3view;
 
 import android.app.Activity;
-import android.app.PictureInPictureParams;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -19,12 +18,12 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import android.view.KeyEvent;
-import android.util.Rational;
 import android.util.Log;
 import android.content.ServiceConnection;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
-import android.graphics.Rect;
+import android.app.PictureInPictureParams;
+import android.util.Rational;
 import android.view.View;
 import android.widget.Button;
 
@@ -36,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
     private AudioService audioService;
     private boolean isBound = false;
     private MediaSessionCompat mediaSession;
+
     private final BroadcastReceiver audioStateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -79,20 +79,6 @@ public class MainActivity extends AppCompatActivity {
                 intent.setType("audio/*");
                 filePickerLauncher.launch(intent);
                 return true;
-            }
-
-            @Override
-            public void onEnterPictureInPictureMode() {
-                super.onEnterPictureInPictureMode();
-                // Here you might want to inform the WebView or update UI outside of PiP mode
-                webView.evaluateJavascript("onEnterPiP();", null);
-            }
-
-            @Override
-            public void onExitPictureInPictureMode() {
-                super.onExitPictureInPictureMode();
-                // Here you might want to update UI or inform WebView that PiP mode has ended
-                webView.evaluateJavascript("onExitPiP();", null);
             }
         });
 
@@ -256,6 +242,16 @@ public class MainActivity extends AppCompatActivity {
         unregisterReceiver(audioStateReceiver);
         if (mediaSession != null) {
             mediaSession.release();
+        }
+    }
+
+    @Override
+    public void onPictureInPictureModeChanged(boolean isInPictureInPictureMode) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode);
+        if (isInPictureInPictureMode) {
+            webView.evaluateJavascript("onEnterPiP();", null);
+        } else {
+            webView.evaluateJavascript("onExitPiP();", null);
         }
     }
 }
