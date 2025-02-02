@@ -36,13 +36,9 @@ public class AudioService extends Service {
                 switch (action) {
                     case "PLAY":
                         if (playbackStatus.equals("PAUSE")) {
-                            if (mediaPlayer != null) {
-                                mediaPlayer.start();
-                            }
+                            mediaPlayer.start();
                         } else {
-                            if (currentFile != null) {
-                                playAudio(currentFile);
-                            }
+                            playAudio(currentFile);
                         }
                         playbackStatus = "PLAY";
                         updateNotification();
@@ -103,16 +99,7 @@ public class AudioService extends Service {
             playbackStatus = "PLAY";
             updateNotification();
             sendStateBroadcast("PLAY");
-            
-            mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
-                @Override
-                public void onCompletion(MediaPlayer mp) {
-                    sendStateBroadcast("STOP");
-                    updateNotification();
-                }
-            });
-
-            handler.postDelayed(updateTimeTask, 1000);
+            handler.postDelayed(updateTimeTask, 1000); // 再生開始時にタイマーを開始
         } catch (Exception e) {
             Log.e(TAG, "Error in playAudio", e);
             playbackStatus = "STOP";
@@ -127,7 +114,7 @@ public class AudioService extends Service {
                 int currentPosition = mediaPlayer.getCurrentPosition();
                 sendTimeUpdate(currentPosition);
             }
-            handler.postDelayed(this, 1000);
+            handler.postDelayed(this, 1000); // 1秒ごとに再生時間を更新
         }
     };
 
@@ -157,8 +144,24 @@ public class AudioService extends Service {
             playbackStatus = "STOP";
             updateNotification();
             sendStateBroadcast("STOP");
-            handler.removeCallbacks(updateTimeTask);
+            handler.removeCallbacks(updateTimeTask); // 停止時にタイマーを停止
         }
+    }
+
+    public void updatePlaybackTime(double time) {
+        // 再生時間を更新し、通知に反映
+        updateNotification();
+    }
+
+    public void seekTo(double time) {
+        if (mediaPlayer != null) {
+            mediaPlayer.seekTo((int) (time * 1000)); // ミリ秒に変換
+            updateNotification();
+        }
+    }
+
+    public void setDuration(double duration) {
+        // 必要に応じて総再生時間を保存または使用
     }
 
     private void updateNotification() {
@@ -245,6 +248,5 @@ public class AudioService extends Service {
         NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         manager.cancel(NOTIFICATION_ID);
         unregisterReceiver(notificationActionReceiver);
-        handler.removeCallbacks(updateTimeTask);
     }
 }
