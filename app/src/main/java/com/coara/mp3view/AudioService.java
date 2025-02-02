@@ -16,7 +16,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
 import android.util.Log;
-import android.content.ServiceConnection;
 
 public class AudioService extends Service {
     private static final String TAG = "AudioService";
@@ -38,7 +37,6 @@ public class AudioService extends Service {
         super.onCreate();
         Log.d(TAG, "onCreate");
         createNotificationChannel();
-        registerReceiver(notificationReceiver, new IntentFilter("AUDIO_CONTROL"));
         updateNotification(); // 初期状態でも通知を表示（STOP状態）
     }
 
@@ -172,32 +170,9 @@ public class AudioService extends Service {
         sendBroadcast(intent);
     }
 
-    private final BroadcastReceiver notificationReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getStringExtra("ACTION");
-            if (action != null) {
-                switch (action) {
-                    case "PLAY":
-                        if (currentFile != null) {
-                            playAudio(currentFile);
-                        }
-                        break;
-                    case "PAUSE":
-                        pauseAudio();
-                        break;
-                    case "STOP":
-                        stopAudio();
-                        break;
-                }
-            }
-        }
-    };
-
     @Override
     public void onDestroy() {
         super.onDestroy();
-        unregisterReceiver(notificationReceiver);
         if (mediaPlayer != null) {
             mediaPlayer.release();
             mediaPlayer = null;
