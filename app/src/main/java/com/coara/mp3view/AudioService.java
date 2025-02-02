@@ -24,7 +24,7 @@ public class AudioService extends Service {
     private static final String CHANNEL_ID = "AudioServiceChannel";
     private static final int NOTIFICATION_ID = 1;
     private String currentFile = null;
-    private String playbackStatus = "STOP";
+    private String playbackStatus = "STOP"; // 初期状態はSTOP
 
     // Binderクラス
     public class AudioBinder extends Binder {
@@ -110,22 +110,22 @@ public class AudioService extends Service {
         int iconRes;
         switch (playbackStatus) {
             case "PLAY":
-                iconRes = R.drawable.ic_playing;
+                iconRes = R.drawable.ic_playing; // 再生中アイコン
                 break;
             case "PAUSE":
-                iconRes = R.drawable.ic_paused;
+                iconRes = R.drawable.ic_paused; // 一時停止アイコン
                 break;
             default:
-                iconRes = R.drawable.ic_stopped;
+                iconRes = R.drawable.ic_stopped; // 停止中アイコン
         }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("MP3 Player")
                 .setContentText(playbackStatus)
                 .setSmallIcon(iconRes)
-                .addAction(createAction("▶", "PLAY"))
-                .addAction(createAction("⏸", "PAUSE"))
-                .addAction(createAction("⏹", "STOP"))
+                .addAction(createAction("▶ Play", "PLAY"))
+                .addAction(createAction("⏸ Pause", "PAUSE"))
+                .addAction(createAction("⏹ Stop", "STOP"))
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setOngoing(playbackStatus.equals("PLAY"))
                 .setContentIntent(getPendingIntent())
@@ -183,11 +183,7 @@ public class AudioService extends Service {
             if (action != null) {
                 switch (action) {
                     case "PLAY":
-                        // もし現在再生中のファイルがない場合、再生ボタンで指定されたファイルを再生
-                        if (currentFile == null) {
-                            String filePath = intent.getStringExtra("filePath");  // ファイルパスを受け取って再生
-                            playAudio(filePath);
-                        } else {
+                        if (currentFile != null) {
                             playAudio(currentFile);
                         }
                         break;
