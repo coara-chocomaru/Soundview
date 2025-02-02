@@ -251,4 +251,9 @@ public class AudioService extends Service {
         unregisterReceiver(notificationActionReceiver);
         handler.removeCallbacksAndMessages(null);
     }
+
+    // 新しく追加されたメソッド
+    public String getCurrentFile() {
+        return currentFile;
+    }
 }
