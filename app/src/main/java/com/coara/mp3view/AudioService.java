@@ -103,18 +103,22 @@ public class AudioService extends Service {
     private void updateNotification() {
         int iconRes;
         String notificationText;
-        switch (playbackStatus) {
-            case "PLAY":
-                iconRes = R.drawable.ic_playing; // 再生中アイコン
-                notificationText = "Now playing: " + currentFile;
-                break;
-            case "PAUSE":
-                iconRes = R.drawable.ic_paused; // 一時停止アイコン
-                notificationText = "Paused: " + currentFile;
-                break;
-            default:
-                iconRes = R.drawable.ic_stopped; // 停止中アイコン
-                notificationText = "No track playing";
+        String currentTime = "00:00";
+        String duration = "00:00";
+
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
+            iconRes = R.drawable.ic_playing; // 再生中アイコン
+            notificationText = "Playing: " + currentFile;
+            currentTime = formatTime(mediaPlayer.getCurrentPosition() / 1000);
+            duration = formatTime(mediaPlayer.getDuration() / 1000);
+        } else if (playbackStatus.equals("PAUSE")) {
+            iconRes = R.drawable.ic_paused; // 一時停止アイコン
+            notificationText = "Paused: " + currentFile;
+            currentTime = formatTime(mediaPlayer.getCurrentPosition() / 1000);
+            duration = formatTime(mediaPlayer.getDuration() / 1000);
+        } else {
+            iconRes = R.drawable.ic_stopped; // 停止中アイコン
+            notificationText = "No track playing";
         }
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
@@ -129,9 +133,14 @@ public class AudioService extends Service {
                 .setContentIntent(getPendingIntent())
                 .build();
 
-        // フォアグラウンドサービスとして通知を開始
         startForeground(NOTIFICATION_ID, notification);
-        Log.d(TAG, "Notification updated: " + playbackStatus);
+    }
+
+    // 時間の形式をMM:SSに変換する
+    private String formatTime(int seconds) {
+        int minutes = seconds / 60;
+        int secs = seconds % 60;
+        return String.format("%02d:%02d", minutes, secs);
     }
 
     // 通知用アクションボタンの生成
@@ -157,9 +166,6 @@ public class AudioService extends Service {
             NotificationManager manager = getSystemService(NotificationManager.class);
             if (manager != null) {
                 manager.createNotificationChannel(channel);
-                Log.d(TAG, "Notification channel created");
-            } else {
-                Log.e(TAG, "NotificationManager is null");
             }
         }
     }
@@ -169,7 +175,6 @@ public class AudioService extends Service {
         Intent intent = new Intent("ACTION_AUDIO_STATE");
         intent.putExtra("state", state);
         sendBroadcast(intent);
-        Log.d(TAG, "Broadcast sent: " + state);
     }
 
     // 通知操作（PLAY／PAUSE／STOP）を受け取るレシーバー
@@ -177,7 +182,6 @@ public class AudioService extends Service {
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getStringExtra("ACTION");
-            Log.d(TAG, "Received notification action: " + action);
             if (action != null) {
                 switch (action) {
                     case "PLAY":
@@ -204,6 +208,5 @@ public class AudioService extends Service {
             mediaPlayer.release();
             mediaPlayer = null;
         }
-        Log.d(TAG, "Service destroyed");
     }
 }
