@@ -9,9 +9,9 @@
         // ファイル選択通知用の関数
         function onFileSelected(file) {
             if (file instanceof File) {
-                Android.onFileSelected(file); // FileオブジェクトをJavaに渡す
+                Android.onFileSelected(file);
             } else if (typeof file === 'string') {
-                Android.onFileSelected(file); // 既に文字列（URI）が渡されている場合
+                Android.onFileSelected(file);
             }
         }
 
@@ -24,13 +24,13 @@
         function updateNotification(state) {
             switch (state) {
                 case 'PLAY':
-                    Android.playAudio();
+                    Android.playOrPause();
                     break;
                 case 'PAUSE':
-                    Android.pauseAudio();
+                    Android.playOrPause();
                     break;
                 case 'STOP':
-                    Android.stopAudio();
+                    Android.stop();
                     break;
             }
             Android.updatePlaybackInfo(getCurrentTime(), getDuration(), state);
