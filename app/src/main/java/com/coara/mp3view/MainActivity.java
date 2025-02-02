@@ -126,6 +126,22 @@ public class MainActivity extends AppCompatActivity {
                 audioService.playAudio(filePath);
             }
         }
+
+        @android.webkit.JavascriptInterface
+        public void playOrPause() {
+            if (audioService != null) {
+                if (audioService.getPlaybackStatus().equals("PLAY")) {
+                    webView.evaluateJavascript("document.getElementById('pauseBtn').click();", null);
+                } else {
+                    webView.evaluateJavascript("document.getElementById('playBtn').click();", null);
+                }
+            }
+        }
+
+        @android.webkit.JavascriptInterface
+        public void stop() {
+            webView.evaluateJavascript("document.getElementById('stopBtn').click();", null);
+        }
     }
 
     private ServiceConnection serviceConnection = new ServiceConnection() {
