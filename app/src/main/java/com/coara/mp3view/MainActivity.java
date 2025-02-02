@@ -21,7 +21,6 @@ import android.view.KeyEvent;
 import android.util.Log;
 import android.content.ServiceConnection;
 
-
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
     private WebView webView;
