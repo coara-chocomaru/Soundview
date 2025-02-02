@@ -33,19 +33,9 @@
             android:exported="true"
             android:foregroundServiceType="mediaPlayback">
             <intent-filter>
-                <action android:name="com.coara.mp3view.AudioService"/>
+                <action android:name=""/>
             </intent-filter>
         </service>
-
-        <!-- AudioServiceからの制御用ブロードキャストレシーバー -->
-        <receiver
-            android:name=".AudioService$AudioControlReceiver"
-            android:enabled="true"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="com.coara.mp3view.ACTION_AUDIO_CONTROL"/>
-            </intent-filter>
-        </receiver>
 
     </application>
 
