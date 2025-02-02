@@ -120,6 +120,13 @@
             cursor: pointer;
         }
 
+        /* 再生時間と現在の再生位置 */
+        #timeDisplay {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -129,10 +136,16 @@
         <button id="playBtn">▶ Play</button>
         <button id="pauseBtn">⏸ Pause</button>
         <button id="stopBtn">⏹ Stop</button>
-        <audio id="audioPlayer" controls class="hidden"></audio>
+        <audio id="audioPlayer" class="hidden"></audio>
 
         <!-- シークバー -->
         <input type="range" id="seekBar" value="0" step="0.1" min="0" max="100">
+
+        <!-- 再生時間と現在の再生位置 -->
+        <div id="timeDisplay">
+            <span id="currentTime">00:00</span>
+            <span id="duration">00:00</span>
+        </div>
 
         <!-- 波形アニメーション -->
         <div class="wave-container hidden" id="waveAnimation">
@@ -152,6 +165,8 @@
         const stopBtn = document.getElementById('stopBtn');
         const waveAnimation = document.getElementById('waveAnimation');
         const seekBar = document.getElementById('seekBar');
+        const currentTimeDisplay = document.getElementById('currentTime');
+        const durationDisplay = document.getElementById('duration');
 
         let selectedFile = null;
 
@@ -164,6 +179,7 @@
                 audioPlayer.src = fileURL;
                 audioPlayer.load();
                 audioPlayer.pause();
+                updateDurationDisplay();
             }
         });
 
@@ -172,6 +188,7 @@
             if (selectedFile) {
                 audioPlayer.play();
                 waveAnimation.classList.remove('hidden');
+                playBtn.textContent = '⏸ Pause';
             } else {
                 alert("Please select an MP3 file first.");
             }
@@ -181,6 +198,7 @@
         pauseBtn.addEventListener('click', function() {
             audioPlayer.pause();
             waveAnimation.classList.add('hidden');
+            playBtn.textContent = '▶ Play';
         });
 
         // 停止ボタン
@@ -188,17 +206,20 @@
             audioPlayer.pause();
             audioPlayer.currentTime = 0;
             waveAnimation.classList.add('hidden');
+            playBtn.textContent = '▶ Play';
         });
 
         // 再生終了後の処理
         audioPlayer.addEventListener('ended', function() {
             waveAnimation.classList.add('hidden');
+            playBtn.textContent = '▶ Play';
         });
 
-        // 再生位置をシークバーに反映
+        // 再生時間とシークバーの同期
         audioPlayer.addEventListener('timeupdate', function() {
             const value = (audioPlayer.currentTime / audioPlayer.duration) * 100;
             seekBar.value = value;
+            updateTimeDisplay();
         });
 
         // シークバーを操作して再生位置を変更
@@ -206,6 +227,29 @@
             const newTime = (seekBar.value / 100) * audioPlayer.duration;
             audioPlayer.currentTime = newTime;
         });
+
+        // 再生時間と現在の再生位置を表示する
+        function updateTimeDisplay() {
+            const currentTime = formatTime(audioPlayer.currentTime);
+            const duration = formatTime(audioPlayer.duration);
+            currentTimeDisplay.textContent = currentTime;
+            durationDisplay.textContent = duration;
+        }
+
+        // 時間の形式をMM:SSに変換する
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // 動画の長さが決まったら表示する
+        function updateDurationDisplay() {
+            if (audioPlayer.duration) {
+                const duration = formatTime(audioPlayer.duration);
+                durationDisplay.textContent = duration;
+            }
+        }
     </script>
 </body>
 </html>
