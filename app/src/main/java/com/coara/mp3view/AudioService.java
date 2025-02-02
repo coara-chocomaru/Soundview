@@ -34,24 +34,7 @@ public class AudioService extends Service {
         public void onReceive(Context context, Intent intent) {
             String action = intent.getStringExtra("ACTION");
             if (action != null) {
-                switch (action) {
-                    case "PLAY":
-                        if (playbackStatus.equals("PAUSE")) {
-                            mediaPlayer.start();
-                        } else {
-                            playAudio(currentFile);
-                        }
-                        playbackStatus = "PLAY";
-                        updateNotification();
-                        sendStateBroadcast("PLAY");
-                        break;
-                    case "PAUSE":
-                        pauseAudio();
-                        break;
-                    case "STOP":
-                        stopAudio();
-                        break;
-                }
+                performAction(action);
             }
         }
     };
@@ -100,7 +83,7 @@ public class AudioService extends Service {
             playbackStatus = "PLAY";
             updateNotification();
             sendStateBroadcast("PLAY");
-            handler.postDelayed(updateTimeTask, 1000); // 再生開始時にタイマーを開始
+            handler.postDelayed(updateTimeTask, 1000);
         } catch (Exception e) {
             Log.e(TAG, "Error in playAudio", e);
             playbackStatus = "STOP";
@@ -115,7 +98,7 @@ public class AudioService extends Service {
                 int currentPosition = mediaPlayer.getCurrentPosition();
                 sendTimeUpdate(currentPosition);
             }
-            handler.postDelayed(this, 1000); // 1秒ごとに再生時間を更新
+            handler.postDelayed(this, 1000);
         }
     };
 
@@ -145,7 +128,7 @@ public class AudioService extends Service {
             playbackStatus = "STOP";
             updateNotification();
             sendStateBroadcast("STOP");
-            handler.removeCallbacks(updateTimeTask); // 停止時にタイマーを停止
+            handler.removeCallbacks(updateTimeTask);
         }
     }
 
@@ -156,7 +139,7 @@ public class AudioService extends Service {
 
     public void seekTo(double time) {
         if (mediaPlayer != null) {
-            mediaPlayer.seekTo((int) (time * 1000)); // ミリ秒に変換
+            mediaPlayer.seekTo((int) (time * 1000));
             updateNotification();
         }
     }
@@ -241,6 +224,27 @@ public class AudioService extends Service {
         sendBroadcast(intent);
     }
 
+    private void performAction(String action) {
+        switch (action) {
+            case "PLAY":
+                if (playbackStatus.equals("PAUSE")) {
+                    mediaPlayer.start();
+                } else {
+                    playAudio(currentFile);
+                }
+                playbackStatus = "PLAY";
+                updateNotification();
+                sendStateBroadcast("PLAY");
+                break;
+            case "PAUSE":
+                pauseAudio();
+                break;
+            case "STOP":
+                stopAudio();
+                break;
+        }
+    }
+
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -254,7 +258,6 @@ public class AudioService extends Service {
         unregisterReceiver(notificationActionReceiver);
     }
 
-    // 追加したメソッド
     public MediaPlayer getMediaPlayer() {
         return mediaPlayer;
     }
