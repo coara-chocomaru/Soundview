@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>MP3 Player</title>
     <style>
         /* ダークマテリアルデザイン */
@@ -12,10 +12,11 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
             background: linear-gradient(135deg, #121212, #1e1e1e);
             margin: 0;
             color: white;
+            transition: background 1s;
         }
 
         .player-container {
@@ -26,6 +27,7 @@
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
             width: 100%;
             max-width: 400px;
+            margin: 20px;
         }
 
         h1 {
@@ -109,6 +111,28 @@
             }
         }
 
+        @keyframes wave2-animation {
+            0%, 100% {
+                height: 20px;
+                background: #ff9800;
+            }
+            50% {
+                height: 40px;
+                background: #ff5722;
+            }
+        }
+
+        @keyframes wave3-animation {
+            0%, 100% {
+                height: 20px;
+                background: #4caf50;
+            }
+            50% {
+                height: 40px;
+                background: #8bc34a;
+            }
+        }
+
         .hidden {
             display: none;
         }
@@ -127,15 +151,54 @@
             font-size: 14px;
             margin-top: 10px;
         }
+
+        /* 新しいボタンスタイル */
+        .control-buttons {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .control-buttons button {
+            flex-grow: 1;
+            margin: 5px;
+            width: auto;
+        }
+
+        /* イコライザー */
+        .equalizer {
+            display: flex;
+            justify-content: space-around;
+            margin: 10px 0;
+        }
+
+        .eq-bar {
+            width: 10px;
+            background: #03dac6;
+            transition: height 0.3s;
+        }
+
+        .eq-bar:nth-child(1) { height: 20px; }
+        .eq-bar:nth-child(2) { height: 30px; }
+        .eq-bar:nth-child(3) { height: 40px; }
+
+        /* 背景エフェクト */
+        body.playing {
+            background: linear-gradient(135deg, #121212, #3700B3);
+        }
     </style>
 </head>
 <body>
     <div class="player-container">
         <h1>MP3 Player</h1>
-        <input type="file" id="fileInput" accept="audio/*">
-        <button id="playBtn">▶ Play</button>
-        <button id="pauseBtn">⏸ Pause</button>
-        <button id="stopBtn">⏹ Stop</button>
+        <input type="file" id="fileInput" accept="audio/*" multiple>
+        <div class="control-buttons">
+            <button id="playBtn">▶ Play</button>
+            <button id="pauseBtn">⏸ Pause</button>
+            <button id="stopBtn">⏹ Stop</button>
+            <button id="repeatBtn">🔁 Repeat</button>
+            <button id="autoPlayBtn">🔄 Auto Play</button>
+        </div>
         <audio id="audioPlayer" class="hidden"></audio>
 
         <!-- シークバー -->
@@ -145,6 +208,13 @@
         <div id="timeDisplay">
             <span id="currentTime">00:00</span>
             <span id="duration">00:00</span>
+        </div>
+
+        <!-- イコライザー -->
+        <div class="equalizer">
+            <div class="eq-bar" id="eq1"></div>
+            <div class="eq-bar" id="eq2"></div>
+            <div class="eq-bar" id="eq3"></div>
         </div>
 
         <!-- 波形アニメーション -->
@@ -163,32 +233,49 @@
         const playBtn = document.getElementById('playBtn');
         const pauseBtn = document.getElementById('pauseBtn');
         const stopBtn = document.getElementById('stopBtn');
+        const repeatBtn = document.getElementById('repeatBtn');
+        const autoPlayBtn = document.getElementById('autoPlayBtn');
         const waveAnimation = document.getElementById('waveAnimation');
         const seekBar = document.getElementById('seekBar');
         const currentTimeDisplay = document.getElementById('currentTime');
         const durationDisplay = document.getElementById('duration');
+        const eq1 = document.getElementById('eq1');
+        const eq2 = document.getElementById('eq2');
+        const eq3 = document.getElementById('eq3');
 
-        let selectedFile = null;
+        let selectedFiles = [];
+        let currentFileIndex = 0;
+        let isRepeat = false;
+        let isAutoPlay = false;
+        let currentAnimation = 'wave';
+
+        const animations = ['wave', 'wave2', 'wave3'];
 
         // ファイル選択時の処理
         fileInput.addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file) {
-                selectedFile = file;
-                const fileURL = URL.createObjectURL(file);
+            selectedFiles = Array.from(event.target.files);
+            loadFile(0);
+        });
+
+        // ファイルを読み込む
+        function loadFile(index) {
+            if (selectedFiles[index]) {
+                currentFileIndex = index;
+                const fileURL = URL.createObjectURL(selectedFiles[index]);
                 audioPlayer.src = fileURL;
                 audioPlayer.load();
                 audioPlayer.pause();
                 updateDurationDisplay();
                 Android.onFileSelected(fileURL);
             }
-        });
+        }
 
         // 再生ボタン
         playBtn.addEventListener('click', function() {
-            if (selectedFile) {
+            if (selectedFiles.length > 0) {
                 audioPlayer.play();
-                waveAnimation.classList.remove('hidden');
+                document.body.classList.add('playing');
+                showWaveAnimation();
                 playBtn.textContent = '⏸ Pause';
                 updateNotification('PLAY');
                 Android.playAudio(audioPlayer.src);
@@ -200,7 +287,8 @@
         // 一時停止ボタン
         pauseBtn.addEventListener('click', function() {
             audioPlayer.pause();
-            waveAnimation.classList.add('hidden');
+            document.body.classList.remove('playing');
+            hideWaveAnimation();
             playBtn.textContent = '▶ Play';
             updateNotification('PAUSE');
             Android.pauseAudio();
@@ -210,18 +298,40 @@
         stopBtn.addEventListener('click', function() {
             audioPlayer.pause();
             audioPlayer.currentTime = 0;
-            waveAnimation.classList.add('hidden');
+            document.body.classList.remove('playing');
+            hideWaveAnimation();
             playBtn.textContent = '▶ Play';
             updateNotification('STOP');
             Android.stopAudio();
         });
 
+        // リピートボタン
+        repeatBtn.addEventListener('click', function() {
+            isRepeat = !isRepeat;
+            repeatBtn.style.backgroundColor = isRepeat ? '#FF6F00' : '#6200ea';
+        });
+
+        // オートプレイボタン
+        autoPlayBtn.addEventListener('click', function() {
+            isAutoPlay = !isAutoPlay;
+            autoPlayBtn.style.backgroundColor = isAutoPlay ? '#FF6F00' : '#6200ea';
+        });
+
         // 再生終了後の処理
         audioPlayer.addEventListener('ended', function() {
-            waveAnimation.classList.add('hidden');
-            playBtn.textContent = '▶ Play';
-            updateNotification('STOP');
-            Android.stopAudio();
+            if (isRepeat) {
+                audioPlayer.currentTime = 0;
+                audioPlayer.play();
+            } else if (isAutoPlay && currentFileIndex < selectedFiles.length - 1) {
+                loadFile(++currentFileIndex);
+                audioPlayer.play();
+            } else {
+                hideWaveAnimation();
+                playBtn.textContent = '▶ Play';
+                document.body.classList.remove('playing');
+                updateNotification('STOP');
+                Android.stopAudio();
+            }
         });
 
         // 再生時間とシークバーの同期
@@ -229,6 +339,7 @@
             const value = (audioPlayer.currentTime / audioPlayer.duration) * 100;
             seekBar.value = value;
             updateTimeDisplay();
+            updateEqualizer();
             Android.updatePlaybackInfo(audioPlayer.currentTime, audioPlayer.duration, audioPlayer.paused ? 'PAUSE' : 'PLAY');
         });
 
@@ -278,6 +389,29 @@
             }
         }
 
+        // 波形アニメーションの表示
+        function showWaveAnimation() {
+            waveAnimation.classList.remove('hidden');
+            currentAnimation = animations[Math.floor(Math.random() * animations.length)];
+            Array.from(waveAnimation.children).forEach((wave, index) => {
+                wave.style.animation = `${currentAnimation}-animation 1s infinite ease-in-out`;
+                wave.style.animationDelay = `${index * 0.2}s`;
+            });
+        }
+
+        // 波形アニメーションの非表示
+        function hideWaveAnimation() {
+            waveAnimation.classList.add('hidden');
+        }
+
+        // イコライザーの更新
+        function updateEqualizer() {
+            const time = audioPlayer.currentTime;
+            eq1.style.height = `${Math.sin(time) * 20 + 25}px`;
+            eq2.style.height = `${Math.sin(time * 2) * 20 + 35}px`;
+            eq3.style.height = `${Math.sin(time * 3) * 20 + 45}px`;
+        }
+
         // 初期設定
         function checkPlaybackState() {
             if (audioPlayer.paused) {
@@ -297,18 +431,21 @@
             switch (state) {
                 case 'PLAY':
                     audioPlayer.play();
-                    waveAnimation.classList.remove('hidden');
+                    document.body.classList.add('playing');
+                    showWaveAnimation();
                     playBtn.textContent = '⏸ Pause';
                     break;
                 case 'PAUSE':
                     audioPlayer.pause();
-                    waveAnimation.classList.add('hidden');
+                    document.body.classList.remove('playing');
+                    hideWaveAnimation();
                     playBtn.textContent = '▶ Play';
                     break;
                 case 'STOP':
                     audioPlayer.pause();
                     audioPlayer.currentTime = 0;
-                    waveAnimation.classList.add('hidden');
+                    document.body.classList.remove('playing');
+                    hideWaveAnimation();
                     playBtn.textContent = '▶ Play';
                     break;
             }
