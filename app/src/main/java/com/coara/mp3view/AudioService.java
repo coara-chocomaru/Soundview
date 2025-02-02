@@ -16,8 +16,6 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.IntentFilter;
 import android.net.Uri;
-
-// MediaSessionCompatを利用するため
 import androidx.media.session.MediaButtonReceiver;
 import androidx.media.session.MediaSessionCompat;
 import androidx.media.app.NotificationCompat.MediaStyle;
