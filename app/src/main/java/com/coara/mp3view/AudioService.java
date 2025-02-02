@@ -17,6 +17,7 @@ import android.content.IntentFilter;
 import android.net.Uri;
 import android.util.Log;
 
+
 public class AudioService extends Service {
     private static final String TAG = "AudioService";
     private MediaPlayer mediaPlayer;
@@ -26,7 +27,6 @@ public class AudioService extends Service {
     private String currentFile = null;
     private String playbackStatus = "STOP"; // 初期状態はSTOP
 
-    // Binderクラス
     public class AudioBinder extends Binder {
         public AudioService getService() {
             return AudioService.this;
