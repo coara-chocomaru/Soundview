@@ -51,6 +51,16 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    private final BroadcastReceiver timeUpdateReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent.getAction() != null && intent.getAction().equals("ACTION_TIME_UPDATE")) {
+                int position = intent.getIntExtra("position", 0);
+                webView.evaluateJavascript("updateTimeDisplay('" + formatTime(position / 1000) + "');", null);
+            }
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -91,6 +101,7 @@ public class MainActivity extends AppCompatActivity {
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
 
         registerReceiver(audioStateReceiver, new IntentFilter("ACTION_AUDIO_STATE"));
+        registerReceiver(timeUpdateReceiver, new IntentFilter("ACTION_TIME_UPDATE"));
     }
 
     private class WebAppInterface {
@@ -132,6 +143,12 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    private String formatTime(int seconds) {
+        int minutes = seconds / 60;
+        int secs = seconds % 60;
+        return String.format("%02d:%02d", minutes, secs);
+    }
+
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
@@ -148,5 +165,6 @@ public class MainActivity extends AppCompatActivity {
             isBound = false;
         }
         unregisterReceiver(audioStateReceiver);
+        unregisterReceiver(timeUpdateReceiver);
     }
 }
