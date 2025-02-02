@@ -22,7 +22,7 @@ public class AudioService extends Service {
     private static final String CHANNEL_ID = "AudioServiceChannel";
     private static final int NOTIFICATION_ID = 1;
     private String currentFile = null;
-    private String playbackStatus = "Stopped";
+    private String playbackStatus = "STOP";
 
     // Binderクラス
     public class AudioBinder extends Binder {
@@ -44,7 +44,7 @@ public class AudioService extends Service {
         return binder;
     }
 
-    // ファイル再生（URI文字列で受け取る）
+    // 再生処理（URI文字列で受け取り）
     public void playAudio(String filePath) {
         if (mediaPlayer != null) {
             mediaPlayer.release();
@@ -87,7 +87,7 @@ public class AudioService extends Service {
         }
     }
 
-    // 通知更新処理
+    // 通知の更新
     private void updateNotification() {
         int iconRes;
         switch (playbackStatus) {
@@ -100,7 +100,6 @@ public class AudioService extends Service {
             default:
                 iconRes = R.drawable.ic_stopped;
         }
-
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("MP3 Player")
                 .setContentText(playbackStatus)
@@ -112,11 +111,10 @@ public class AudioService extends Service {
                 .setOngoing(playbackStatus.equals("PLAY"))
                 .setContentIntent(getPendingIntent())
                 .build();
-
         startForeground(NOTIFICATION_ID, notification);
     }
 
-    // 通知のアクションボタン作成
+    // 通知用アクションボタンの生成
     private NotificationCompat.Action createAction(String title, String action) {
         Intent intent = new Intent("AUDIO_CONTROL");
         intent.putExtra("ACTION", action);
@@ -125,14 +123,14 @@ public class AudioService extends Service {
         return new NotificationCompat.Action(0, title, pendingIntent);
     }
 
-    // 通知タップ時のPendingIntent作成
+    // 通知タップ時のPendingIntent生成
     private PendingIntent getPendingIntent() {
         Intent intent = new Intent(this, MainActivity.class);
         return PendingIntent.getActivity(this, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
-    // 通知チャネル作成（Android 8.0以上）
+    // 通知チャネルの生成（Android 8.0以上用）
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(CHANNEL_ID, "Audio Service", NotificationManager.IMPORTANCE_LOW);
@@ -143,7 +141,7 @@ public class AudioService extends Service {
         }
     }
 
-    // AudioServiceの各再生操作後にHTMLへ状態を伝えるためのブロードキャスト送信
+    // 再生状態のブロードキャスト送信（MainActivity側でWebView更新用）
     private void sendStateBroadcast(String state) {
         Intent intent = new Intent("ACTION_AUDIO_STATE");
         intent.putExtra("state", state);
