@@ -110,7 +110,7 @@ public class AudioService extends Service {
     }
 
     private void updateNotification() {
-    int iconRes = R.drawable.icon;
+    int iconRes = R.drawable.dummy;
 
 
 
