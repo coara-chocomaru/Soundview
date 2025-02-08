@@ -110,14 +110,8 @@ public class AudioService extends Service {
     }
 
     private void updateNotification() {
-        int iconRes;
-        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
-            iconRes = R.drawable.ic_playing;
-        } else if (playbackStatus.equals("PAUSE")) {
-            iconRes = R.drawable.ic_paused;
-        } else {
-            iconRes = R.drawable.ic_stopped;
-        }
+    int iconRes = R.drawable.dummy;
+
 
 
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
