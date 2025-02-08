@@ -22,7 +22,7 @@ public class AudioService extends Service {
     private static final String CHANNEL_ID = "AudioServiceChannel";
     private static final int NOTIFICATION_ID = 1;
     private String currentFile = null;
-    private String playbackStatus = "STOP"; // 初期状態はSTOP
+    private String playbackStatus = "STOP"; 
 
     public class AudioBinder extends Binder {
         public AudioService getService() {
@@ -35,7 +35,7 @@ public class AudioService extends Service {
         super.onCreate();
         Log.d(TAG, "onCreate");
         createNotificationChannel();
-        updateNotification(); // 初期状態でも通知を表示（STOP状態）
+        updateNotification(); 
     }
 
     @Override
@@ -43,14 +43,13 @@ public class AudioService extends Service {
         return binder;
     }
 
-    // onStartCommand をオーバーライドして、EXIT アクションを処理する
+    
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (intent != null && "EXIT".equals(intent.getAction())) {
             Log.d(TAG, "EXIT action received, terminating app.");
             stopAudio();
             stopSelf();
-            // 強制終了（※推奨される方法ではありませんが、要求に沿っています）
             System.exit(0);
             return START_NOT_STICKY;
         }
@@ -120,8 +119,7 @@ public class AudioService extends Service {
             iconRes = R.drawable.ic_stopped;
         }
 
-        // 通知内のボタンや再生時間表示は削除し、
-        // タイトル・本文は常に "Sound Player" を表示し、右下に EXIT ボタンを追加
+
         Notification notification = new NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle("Sound Player")
                 .setSmallIcon(iconRes)
