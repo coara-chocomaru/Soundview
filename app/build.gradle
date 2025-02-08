@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    compileSdk = 35  // 最新の安定版に変更
+    compileSdk = 35 
 
     namespace = 'com.coara.mp3view'
 
@@ -55,11 +55,11 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 dependencies {
-    implementation 'androidx.activity:activity:1.7.0' // この行を追加
+    implementation 'androidx.activity:activity:1.7.0' 
     implementation 'androidx.appcompat:appcompat:1.6.0'
     implementation 'com.google.android.material:material:1.10.0'
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
-    implementation 'androidx.webkit:webkit:1.10.0'  // WebViewの最新APIを使う
+    implementation 'androidx.webkit:webkit:1.10.0'  
     implementation 'androidx.core:core:1.8.0'
     implementation 'com.android.support:support-v4:28.0.0'
     implementation 'com.android.support:appcompat-v7:28.0.0'
