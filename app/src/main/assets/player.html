@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sound Player</title>
   <style>
-    /* 全体リセット */
     * {
       box-sizing: border-box;
     }
@@ -22,8 +21,6 @@
       color: white;
       transition: background 0.5s ease;
     }
-
-    /* 背景アニメーションパターン */
     .bg-animation-1 {
       animation: bg-animation-1 3s infinite ease-in-out;
     }
@@ -134,7 +131,6 @@
       box-shadow: 0 6px 12px rgba(0, 121, 107, 0.5);
     }
 
-    /* ファイル名表示用 */
     #fileNameDisplay {
       margin-top: 5px;
       font-size: 16px;
@@ -143,7 +139,6 @@
       white-space: normal;
     }
 
-    /* 波形アニメーション */
     .wave-container {
       display: flex;
       justify-content: center;
@@ -244,7 +239,6 @@
       const file = event.target.files[0];
       if (file) {
         selectedFile = file;
-        // ファイル名を表示（長い名前も途切れずに表示）
         fileNameDisplay.textContent = file.name;
         const fileURL = URL.createObjectURL(file);
         audioPlayer.src = fileURL;
