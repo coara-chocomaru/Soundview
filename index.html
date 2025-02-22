@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sound Player</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #121212, #1e1e1e);
+      margin: 0;
+      color: white;
+      transition: background 0.5s ease;
+    }
+    .bg-animation-1 {
+      animation: bg-animation-1 3s infinite ease-in-out;
+    }
+    @keyframes bg-animation-1 {
+      0% { background: linear-gradient(135deg, #121212, #1e1e1e); }
+      50% { background: linear-gradient(135deg, #1e1e1e, #121212); }
+      100% { background: linear-gradient(135deg, #121212, #1e1e1e); }
+    }
+
+    .bg-animation-2 {
+      background: linear-gradient(45deg, #ff6b6b, #f7d794);
+      background-size: 200% 200%;
+      animation: bg-animation-2 5s ease infinite;
+    }
+    @keyframes bg-animation-2 {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .bg-animation-3 {
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      background-size: 150% 150%;
+      animation: bg-animation-3 4s ease-in-out infinite;
+    }
+    @keyframes bg-animation-3 {
+      0% { background-position: 0% 0%; }
+      50% { background-position: 100% 100%; }
+      100% { background-position: 0% 0%; }
+    }
+
+    .bg-animation-4 {
+      animation: bg-animation-4 7s linear infinite;
+    }
+    @keyframes bg-animation-4 {
+      0% { background-color: #1a2a6c; }
+      25% { background-color: #b21f1f; }
+      50% { background-color: #fdbb2d; }
+      75% { background-color: #1a2a6c; }
+      100% { background-color: #1a2a6c; }
+    }
+
+    .bg-animation-5 {
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      background-size: 400% 400%;
+      animation: bg-animation-5 8s ease infinite;
+    }
+    @keyframes bg-animation-5 {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .player-container {
+      text-align: center;
+      background: rgba(40, 40, 40, 0.9);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+      width: 90%;
+      max-width: 400px;
+      margin: 10px;
+    }
+
+    h1 {
+      margin-bottom: 20px;
+      font-size: 24px;
+    }
+
+    button,
+    input[type="file"] {
+      padding: 12px 20px;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      transition: 0.3s;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background: #6200ea;
+      color: white;
+      box-shadow: 0 4px 10px rgba(98, 0, 234, 0.5);
+    }
+
+    button:hover {
+      background: #7b1fa2;
+      box-shadow: 0 6px 12px rgba(123, 31, 162, 0.5);
+    }
+
+    #stopBtn {
+      background: #d32f2f;
+      box-shadow: 0 4px 10px rgba(211, 47, 47, 0.5);
+    }
+    #stopBtn:hover {
+      background: #b71c1c;
+      box-shadow: 0 6px 12px rgba(183, 28, 28, 0.5);
+    }
+
+    #repeatBtn {
+      background: #009688;
+      box-shadow: 0 4px 10px rgba(0, 150, 136, 0.5);
+    }
+    #repeatBtn:hover {
+      background: #00796b;
+      box-shadow: 0 6px 12px rgba(0, 121, 107, 0.5);
+    }
+
+    #fileNameDisplay {
+      margin-top: 5px;
+      font-size: 16px;
+      color: #eee;
+      word-wrap: break-word;
+      white-space: normal;
+    }
+
+    .wave-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-top: 20px;
+      height: 50px;
+    }
+
+    .wave {
+      width: 8px;
+      height: 30px;
+      margin: 0 4px;
+      background: #03dac6;
+    }
+
+    @keyframes wave-animation-1 {
+      0%, 100% { height: 20px; background: #03dac6; }
+      50% { height: 40px; background: #bb86fc; }
+    }
+    @keyframes wave-animation-2 {
+      0%, 100% { transform: scaleY(1); background: #ff9800; }
+      50% { transform: scaleY(1.5); background: #ff5722; }
+    }
+    @keyframes wave-animation-3 {
+      0%, 100% { height: 30px; background: #8bc34a; }
+      50% { height: 50px; background: #4caf50; }
+    }
+
+    .wave:nth-child(1) { animation-delay: 0s; }
+    .wave:nth-child(2) { animation-delay: 0.2s; }
+    .wave:nth-child(3) { animation-delay: 0.4s; }
+    .wave:nth-child(4) { animation-delay: 0.6s; }
+    .wave:nth-child(5) { animation-delay: 0.8s; }
+
+    .hidden {
+      display: none;
+    }
+
+    #seekBar {
+      width: 100%;
+      margin-top: 20px;
+      cursor: pointer;
+    }
+
+    #timeDisplay {
+      display: flex;
+      justify-content: space-between;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="player-container">
+    <h1>Sound Player</h1>
+    <!-- ファイル選択ボタンを上部に配置 -->
+    <input type="file" id="fileInput" accept="audio/*" />
+    <!-- 選択したファイル名表示エリア -->
+    <div id="fileNameDisplay">ファイル名がここに表示されます</div>
+    <button id="playBtn">▶ Play</button>
+    <button id="pauseBtn">⏸ Pause</button>
+    <button id="stopBtn">⏹ Stop</button>
+    <button id="repeatBtn">🔁 Repeat Off</button>
+    <audio id="audioPlayer" class="hidden"></audio>
+
+    <input type="range" id="seekBar" value="0" step="0.1" min="0" max="100" />
+
+    <div id="timeDisplay">
+      <span id="currentTime">00:00</span>
+      <span id="duration">00:00</span>
+    </div>
+
+    <div class="wave-container hidden" id="waveAnimation">
+      <div class="wave"></div>
+      <div class="wave"></div>
+      <div class="wave"></div>
+      <div class="wave"></div>
+      <div class="wave"></div>
+    </div>
+  </div>
+
+  <script>
+    const fileInput = document.getElementById('fileInput');
+    const fileNameDisplay = document.getElementById('fileNameDisplay');
+    const audioPlayer = document.getElementById('audioPlayer');
+    const playBtn = document.getElementById('playBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const repeatBtn = document.getElementById('repeatBtn');
+    const waveAnimation = document.getElementById('waveAnimation');
+    const seekBar = document.getElementById('seekBar');
+    const currentTimeDisplay = document.getElementById('currentTime');
+    const durationDisplay = document.getElementById('duration');
+
+    let selectedFile = null;
+
+    fileInput.addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      if (file) {
+        selectedFile = file;
+        fileNameDisplay.textContent = file.name;
+        const fileURL = URL.createObjectURL(file);
+        audioPlayer.src = fileURL;
+        audioPlayer.load();
+        audioPlayer.pause();
+        updateDurationDisplay();
+        if (typeof Android !== 'undefined' && Android.onFileSelected) {
+          Android.onFileSelected(fileURL);
+        }
+      }
+    });
+
+    function setRandomWaveAnimation() {
+      const animations = ["wave-animation-1", "wave-animation-2", "wave-animation-3"];
+      const randomAnim = animations[Math.floor(Math.random() * animations.length)];
+      const waves = document.querySelectorAll('.wave-container .wave');
+      waves.forEach(wave => {
+        wave.style.animation = `${randomAnim} 1s infinite ease-in-out`;
+      });
+    }
+
+    function setRandomBackgroundAnimation() {
+      const classes = ["bg-animation-1", "bg-animation-2", "bg-animation-3", "bg-animation-4", "bg-animation-5"];
+      classes.forEach(cls => document.body.classList.remove(cls));
+      const randomClass = classes[Math.floor(Math.random() * classes.length)];
+      document.body.classList.add(randomClass);
+    }
+
+    playBtn.addEventListener('click', function() {
+      if (selectedFile) {
+        audioPlayer.play();
+        setRandomWaveAnimation();
+        waveAnimation.classList.remove('hidden');
+        playBtn.textContent = '⏸ Pause';
+        setRandomBackgroundAnimation();
+        if (typeof Android !== 'undefined' && Android.playAudio) {
+          Android.playAudio(audioPlayer.src);
+        }
+        updateNotification('PLAY');
+      } else {
+        alert("Please select an MP3 file first.");
+      }
+    });
+
+    pauseBtn.addEventListener('click', function() {
+      audioPlayer.pause();
+      waveAnimation.classList.add('hidden');
+      playBtn.textContent = '▶ Play';
+      removeBackgroundAnimation();
+      if (typeof Android !== 'undefined' && Android.pauseAudio) {
+        Android.pauseAudio();
+      }
+      updateNotification('PAUSE');
+    });
+
+    stopBtn.addEventListener('click', function() {
+      audioPlayer.pause();
+      audioPlayer.currentTime = 0;
+      waveAnimation.classList.add('hidden');
+      playBtn.textContent = '▶ Play';
+      removeBackgroundAnimation();
+      if (typeof Android !== 'undefined' && Android.stopAudio) {
+        Android.stopAudio();
+      }
+      updateNotification('STOP');
+    });
+
+    repeatBtn.addEventListener('click', function() {
+      audioPlayer.loop = !audioPlayer.loop;
+      repeatBtn.textContent = audioPlayer.loop ? '🔁 Repeat On' : '🔁 Repeat Off';
+      if (typeof Android !== 'undefined' && Android.toggleRepeat) {
+        Android.toggleRepeat(audioPlayer.loop);
+      }
+    });
+
+    audioPlayer.addEventListener('ended', function() {
+      waveAnimation.classList.add('hidden');
+      playBtn.textContent = '▶ Play';
+      removeBackgroundAnimation();
+      updateNotification('STOP');
+      if (typeof Android !== 'undefined' && Android.stopAudio) {
+        Android.stopAudio();
+      }
+    });
+
+    audioPlayer.addEventListener('timeupdate', function() {
+      if (audioPlayer.duration) {
+        const value = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+        seekBar.value = value;
+      }
+      updateTimeDisplay();
+      if (typeof Android !== 'undefined' && Android.updatePlaybackInfo) {
+        Android.updatePlaybackInfo(audioPlayer.currentTime, audioPlayer.duration, audioPlayer.paused ? 'PAUSE' : 'PLAY');
+      }
+    });
+
+    seekBar.addEventListener('input', function() {
+      if (audioPlayer.duration) {
+        const newTime = (seekBar.value / 100) * audioPlayer.duration;
+        audioPlayer.currentTime = newTime;
+        if (typeof Android !== 'undefined' && Android.seekTo) {
+          Android.seekTo(newTime);
+        }
+      }
+    });
+
+    function updateTimeDisplay() {
+      const currentTime = formatTime(audioPlayer.currentTime);
+      const duration = formatTime(audioPlayer.duration);
+      currentTimeDisplay.textContent = currentTime;
+      durationDisplay.textContent = duration;
+    }
+
+    function formatTime(seconds) {
+      const minutes = Math.floor(seconds / 60);
+      const secs = Math.floor(seconds % 60);
+      return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function updateDurationDisplay() {
+      if (audioPlayer.duration) {
+        const duration = formatTime(audioPlayer.duration);
+        durationDisplay.textContent = duration;
+        if (typeof Android !== 'undefined' && Android.setDuration) {
+          Android.setDuration(audioPlayer.duration);
+        }
+      }
+    }
+
+    function updateNotification(state) {
+      if (typeof Android === 'undefined') return;
+      switch (state) {
+        case 'PLAY':
+          if (Android.playOrPause) Android.playOrPause();
+          break;
+        case 'PAUSE':
+          if (Android.playOrPause) Android.playOrPause();
+          break;
+        case 'STOP':
+          if (Android.stop) Android.stop();
+          break;
+      }
+    }
+
+    function removeBackgroundAnimation() {
+      const classes = ["bg-animation-1", "bg-animation-2", "bg-animation-3", "bg-animation-4", "bg-animation-5"];
+      classes.forEach(cls => document.body.classList.remove(cls));
+      document.body.style.background = "linear-gradient(135deg, #121212, #1e1e1e)";
+    }
+
+    function checkPlaybackState() {
+      if (audioPlayer.paused) {
+        updateNotification('PAUSE');
+      } else if (audioPlayer.ended) {
+        updateNotification('STOP');
+      } else {
+        updateNotification('PLAY');
+      }
+    }
+    setInterval(checkPlaybackState, 1000);
+
+    function updateUIFromJava(state) {
+      switch (state) {
+        case 'PLAY':
+          audioPlayer.play();
+          setRandomWaveAnimation();
+          waveAnimation.classList.remove('hidden');
+          playBtn.textContent = '⏸ Pause';
+          setRandomBackgroundAnimation();
+          break;
+        case 'PAUSE':
+          audioPlayer.pause();
+          waveAnimation.classList.add('hidden');
+          playBtn.textContent = '▶ Play';
+          removeBackgroundAnimation();
+          break;
+        case 'STOP':
+          audioPlayer.pause();
+          audioPlayer.currentTime = 0;
+          waveAnimation.classList.add('hidden');
+          playBtn.textContent = '▶ Play';
+          removeBackgroundAnimation();
+          break;
+      }
+    }
+  </script>
+</body>
+</html>
