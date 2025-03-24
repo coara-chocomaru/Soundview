@@ -29,14 +29,12 @@ public class MainActivity extends AppCompatActivity {
     private AudioService audioService;
     private boolean isBound = false;
 
-
     private final BroadcastReceiver audioStateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
             String state = intent.getStringExtra("state");
             Log.d(TAG, "Audio state received: " + state);
             if (state != null) {
-                // WebViewを更新するJavaScript呼び出し
                 switch (state) {
                     case "PLAY":
                         webView.evaluateJavascript("document.getElementById('waveAnimation').classList.remove('hidden');", null);
@@ -63,6 +61,9 @@ public class MainActivity extends AppCompatActivity {
         WebSettings webSettings = webView.getSettings();
         webSettings.setJavaScriptEnabled(true);
         webSettings.setAllowFileAccess(true);
+        webSettings.setAllowFileAccessFromFileURLs(true);
+        webSettings.setAllowUniversalAccessFromFileURLs(true);
+
         webView.setWebViewClient(new WebViewClient());
         webView.setWebChromeClient(new WebChromeClient() {
             @Override
@@ -76,8 +77,9 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // JavaScriptインターフェースの登録（HTML内のボタン操作からAudioServiceを呼び出す）
+        // JavaScriptインターフェース登録（HTML内のボタン等からAudioServiceを呼び出すため）
         webView.addJavascriptInterface(new WebAppInterface(), "Android");
+        // assetsフォルダ内のplayer.htmlを読み込む
         webView.loadUrl("file:///android_asset/player.html");
 
         // ファイルピッカー結果の処理
@@ -96,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
         startService(serviceIntent);
         bindService(serviceIntent, serviceConnection, Context.BIND_AUTO_CREATE);
 
-        // AudioServiceからの再生状態ブロードキャスト受信用レシーバー登録
+        // AudioServiceからの再生状態のブロードキャストを受信するレシーバー登録
         registerReceiver(audioStateReceiver, new IntentFilter("ACTION_AUDIO_STATE"));
     }
 
