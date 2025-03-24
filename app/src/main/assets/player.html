@@ -1,13 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sound Player </title>
+  <title>Sound Player</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
     body {
       font-family: 'Roboto', sans-serif;
       display: flex;
@@ -20,9 +18,8 @@
       color: white;
       transition: background 0.5s ease;
     }
-    .bg-animation-1 {
-      animation: bg-animation-1 3s infinite ease-in-out;
-    }
+    
+    .bg-animation-1 { animation: bg-animation-1 3s infinite ease-in-out; }
     @keyframes bg-animation-1 {
       0% { background: linear-gradient(135deg, #121212, #1e1e1e); }
       50% { background: linear-gradient(135deg, #1e1e1e, #121212); }
@@ -48,9 +45,7 @@
       50% { background-position: 100% 100%; }
       100% { background-position: 0% 0%; }
     }
-    .bg-animation-4 {
-      animation: bg-animation-4 7s linear infinite;
-    }
+    .bg-animation-4 { animation: bg-animation-4 7s linear infinite; }
     @keyframes bg-animation-4 {
       0% { background-color: #1a2a6c; }
       25% { background-color: #b21f1f; }
@@ -68,7 +63,7 @@
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
     }
-
+    /* プレーヤー全体のコンテナ */
     .player-container {
       text-align: center;
       background: rgba(40, 40, 40, 0.9);
@@ -79,11 +74,8 @@
       max-width: 400px;
       margin: 10px;
     }
-    h1 {
-      margin: 10px 0;
-      font-size: 24px;
-    }
-    
+    h1 { margin: 10px 0; font-size: 24px; }
+    /* カバーアート表示用の正方形領域 */
     .cover-art-container {
       width: 100%;
       max-width: 400px;
@@ -103,8 +95,7 @@
       height: 100%;
       object-fit: cover;
     }
-    button,
-    input[type="file"] {
+    button, input[type="file"] {
       padding: 12px 20px;
       font-size: 18px;
       border: none;
@@ -176,9 +167,7 @@
     .wave:nth-child(3) { animation-delay: 0.4s; }
     .wave:nth-child(4) { animation-delay: 0.6s; }
     .wave:nth-child(5) { animation-delay: 0.8s; }
-    .hidden {
-      display: none;
-    }
+    .hidden { display: none; }
     #seekBar {
       width: 100%;
       margin-top: 20px;
@@ -195,9 +184,7 @@
 <body>
   <div class="player-container" id="playerContainer">
     <h1>Sound Player</h1>
-    <!-- ファイル選択ボタン -->
     <input type="file" id="fileInput" accept="audio/*" />
-    <!-- 選択したファイル名表示 -->
     <div id="fileNameDisplay">ファイル名がここに表示されます</div>
     <button id="playBtn">▶ Play</button>
     <button id="pauseBtn">⏸ Pause</button>
@@ -219,90 +206,208 @@
   </div>
 
   <script>
-    function extractCoverArt(file, callback) {
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const buffer = e.target.result;
-        const dataView = new DataView(buffer);
-        // ID3タグの存在チェック ("ID3"が先頭にあるか)
-        if (dataView.getUint8(0) !== 0x49 || dataView.getUint8(1) !== 0x44 || dataView.getUint8(2) !== 0x33) {
-          console.log("ID3タグが見つかりません。");
-          callback(null);
-          return;
-        }
-        // タグサイズ
-        const tagSize = ((dataView.getUint8(6) & 0x7F) << 21) |
-                        ((dataView.getUint8(7) & 0x7F) << 14) |
-                        ((dataView.getUint8(8) & 0x7F) << 7)  |
-                        (dataView.getUint8(9) & 0x7F);
-        let offset = 10; // ヘッダーの後から開始
-        while (offset < tagSize + 10) {
-          // フレームヘッダー：4バイトのID、4バイトのサイズ、2バイトのフラグ
-          let frameId = "";
-          for (let i = 0; i < 4; i++) {
-            frameId += String.fromCharCode(dataView.getUint8(offset + i));
-          }
-          if (frameId.trim() === "") break;  // 空文字列なら終了
-          const frameSize = dataView.getUint32(offset + 4);
-          
-          if (frameId === "APIC") {
-            let current = offset + 10;
-          
-            const encoding = dataView.getUint8(current);
-            current++;
-            
-            let mime = "";
-            while (dataView.getUint8(current) !== 0) {
-              mime += String.fromCharCode(dataView.getUint8(current));
-              current++;
-            }
-            current++; 
-  
-            const pictureType = dataView.getUint8(current);
-            current++;
-      
-            while (dataView.getUint8(current) !== 0) {
-              current++;
-            }
-            current++;
-            const imageData = buffer.slice(current, offset + 10 + frameSize);
-            const base64String = arrayBufferToBase64(imageData);
-            const imageUrl = "data:" + mime + ";base64," + base64String;
-            callback(imageUrl);
-            return;
-          }
-          offset += 10 + frameSize;
-        }
-        callback(null);
-      };
-      reader.readAsArrayBuffer(file);
+    function readNullTerminatedString(dataView, offset) {
+      const start = offset;
+      while (offset < dataView.byteLength && dataView.getUint8(offset) !== 0) {
+        offset++;
+      }
+      const str = new TextDecoder("ascii").decode(new Uint8Array(dataView.buffer, start, offset - start));
+      return { text: str, next: offset + 1 };
     }
+
+  
     function arrayBufferToBase64(buffer) {
-      let binary = "";
       const bytes = new Uint8Array(buffer);
-      for (let i = 0; i < bytes.byteLength; i++) {
+      let binary = "";
+      for (let i = 0, len = bytes.length; i < len; i++) {
         binary += String.fromCharCode(bytes[i]);
       }
       return window.btoa(binary);
     }
 
-    const fileInput = document.getElementById('fileInput');
-    const fileNameDisplay = document.getElementById('fileNameDisplay');
-    const audioPlayer = document.getElementById('audioPlayer');
-    const playBtn = document.getElementById('playBtn');
-    const pauseBtn = document.getElementById('pauseBtn');
-    const stopBtn = document.getElementById('stopBtn');
-    const repeatBtn = document.getElementById('repeatBtn');
-    const waveAnimation = document.getElementById('waveAnimation');
-    const seekBar = document.getElementById('seekBar');
-    const currentTimeDisplay = document.getElementById('currentTime');
-    const durationDisplay = document.getElementById('duration');
-    const playerContainer = document.getElementById('playerContainer');
+    // カバーアート抽出：ファイル種別判定後、対応する処理を実行
+    function extractCoverArt(file, callback) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const buffer = e.target.result;
+        const dataView = new DataView(buffer);
+        if (
+          dataView.getUint8(0) === 0x49 &&
+          dataView.getUint8(1) === 0x44 &&
+          dataView.getUint8(2) === 0x33
+        ) {
+          extractID3CoverArt(buffer, dataView, callback);
+        } else if (
+          dataView.getUint8(0) === 0x66 &&
+          dataView.getUint8(1) === 0x4C &&
+          dataView.getUint8(2) === 0x61 &&
+          dataView.getUint8(3) === 0x43
+        ) {
+          extractFlacCoverArt(buffer, dataView, callback);
+        } else if (isMp4(buffer)) {
+          extractMp4CoverArt(buffer, dataView, callback);
+        } else {
+          console.log("対応フォーマット外です。");
+          callback(null);
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // ID3タグ（ID3v2.2 の PIC と v2.3/2.4 の APIC）
+    function extractID3CoverArt(buffer, dataView, callback) {
+      const version = dataView.getUint8(3);
+      const tagSize = ((dataView.getUint8(6) & 0x7F) << 21) |
+                      ((dataView.getUint8(7) & 0x7F) << 14) |
+                      ((dataView.getUint8(8) & 0x7F) << 7)  |
+                       (dataView.getUint8(9) & 0x7F);
+      let offset = 10;
+      while (offset < tagSize + 10) {
+        if (version === 2) {
+          // ID3v2.2: 3バイトID + 3バイトサイズ
+          const frameId = new TextDecoder("ascii").decode(new Uint8Array(dataView.buffer, offset, 3));
+          if (!frameId.trim()) break;
+          const frameSize = (dataView.getUint8(offset + 3) << 16) |
+                            (dataView.getUint8(offset + 4) << 8)  |
+                             dataView.getUint8(offset + 5);
+          if (frameId === "PIC") {
+            let current = offset + 6;
+            current++; // エンコーディング1バイト
+            const imageFormat = new TextDecoder("ascii").decode(new Uint8Array(dataView.buffer, current, 3));
+            current += 3;
+            current++; // picture type
+            // 説明文（null終端）
+            const result = readNullTerminatedString(dataView, current);
+            current = result.next;
+            const imageData = buffer.slice(current, offset + 6 + frameSize);
+            const base64String = arrayBufferToBase64(imageData);
+            const mime = imageFormat.toLowerCase() === "jpg" ? "image/jpeg" : "image/" + imageFormat.toLowerCase();
+            callback("data:" + mime + ";base64," + base64String);
+            return;
+          }
+          offset += 6 + frameSize;
+        } else {
+          // ID3v2.3/2.4: 4バイトID + 4バイトサイズ + 2バイトフラグ
+          const frameId = new TextDecoder("ascii").decode(new Uint8Array(dataView.buffer, offset, 4));
+          if (!frameId.trim()) break;
+          const frameSize = dataView.getUint32(offset + 4);
+          if (frameId === "APIC") {
+            let current = offset + 10;
+            current++; // エンコーディング
+            // MIMEタイプ（null終端）
+            const mimeResult = readNullTerminatedString(dataView, current);
+            const mime = mimeResult.text;
+            current = mimeResult.next;
+            current++; // picture type
+            const descResult = readNullTerminatedString(dataView, current);
+            current = descResult.next;
+            const imageData = buffer.slice(current, offset + 10 + frameSize);
+            const base64String = arrayBufferToBase64(imageData);
+            callback("data:" + mime + ";base64," + base64String);
+            return;
+          }
+          offset += 10 + frameSize;
+        }
+      }
+      callback(null);
+    }
+
+    // FLAC のカバーアート（PICTUREブロック）
+    function extractFlacCoverArt(buffer, dataView, callback) {
+      let offset = 4; // "fLaC" の後から開始
+      while (offset + 4 < buffer.byteLength) {
+        const header = dataView.getUint8(offset);
+        const blockType = header & 0x7F;
+        const blockLength = (dataView.getUint8(offset + 1) << 16) |
+                            (dataView.getUint8(offset + 2) << 8)  |
+                             dataView.getUint8(offset + 3);
+        if (blockType === 6) { // PICTUREブロック
+          let current = offset + 4;
+          current += 4; // Picture type
+          const mimeLength = dataView.getUint32(current);
+          current += 4;
+          const mime = new TextDecoder("ascii").decode(new Uint8Array(buffer, current, mimeLength));
+          current += mimeLength;
+          const descLength = dataView.getUint32(current);
+          current += 4 + descLength;
+          current += 4 * 4; // 幅・高さ・色深度・パレットサイズをスキップ
+          const imageDataLength = dataView.getUint32(current);
+          current += 4;
+          const imageData = buffer.slice(current, current + imageDataLength);
+          const base64String = arrayBufferToBase64(imageData);
+          callback("data:" + mime + ";base64," + base64String);
+          return;
+        }
+        // 次のブロックへ
+        offset += 4 + blockLength;
+        // 最後のブロックなら break
+        if (dataView.getUint8(offset - (4 + blockLength)) & 0x80) break;
+      }
+      callback(null);
+    }
+
+    // MP4/M4A のカバーアート抽出（ATOM探索）
+    function extractMp4CoverArt(buffer, dataView, callback) {
+      const covrAtom = findAtom(buffer, 0, buffer.byteLength, "covr");
+      if (covrAtom) {
+        const dataAtom = findAtom(buffer, covrAtom.dataStart, covrAtom.dataStart + covrAtom.dataSize, "data");
+        if (dataAtom) {
+          // data ATOM: 最初の8バイトは version/flags とデータタイプ
+          const flag = dataView.getUint32(dataAtom.offset + 4);
+          let mime = flag === 13 ? "image/jpeg" : flag === 14 ? "image/png" : "image/jpeg";
+          const dataOffset = dataAtom.offset + 8;
+          const dataLength = dataAtom.size - 8;
+          const imageData = buffer.slice(dataOffset, dataOffset + dataLength);
+          const base64String = arrayBufferToBase64(imageData);
+          callback("data:" + mime + ";base64," + base64String);
+          return;
+        }
+      }
+      callback(null);
+    }
+
+
+    function findAtom(buffer, start, end, target) {
+      const dataView = new DataView(buffer);
+      let offset = start;
+      while (offset + 8 <= end) {
+        const size = dataView.getUint32(offset);
+        const type = new TextDecoder("ascii").decode(new Uint8Array(buffer, offset + 4, 4));
+        if (type === target) {
+          return { offset, size, dataStart: offset + 8, dataSize: size - 8 };
+        }
+        if (size > 8 && (type === "moov" || type === "udta" || type === "meta" || type === "ilst")) {
+          const result = findAtom(buffer, offset + 8, offset + size, target);
+          if (result) return result;
+        }
+        offset += size;
+      }
+      return null;
+    }
+
+    function isMp4(buffer) {
+      const dataView = new DataView(buffer);
+      const type = new TextDecoder("ascii").decode(new Uint8Array(buffer, 4, 4));
+      return type === "ftyp";
+    }
+
+    const fileInput = document.getElementById("fileInput");
+    const fileNameDisplay = document.getElementById("fileNameDisplay");
+    const audioPlayer = document.getElementById("audioPlayer");
+    const playBtn = document.getElementById("playBtn");
+    const pauseBtn = document.getElementById("pauseBtn");
+    const stopBtn = document.getElementById("stopBtn");
+    const repeatBtn = document.getElementById("repeatBtn");
+    const waveAnimation = document.getElementById("waveAnimation");
+    const seekBar = document.getElementById("seekBar");
+    const currentTimeDisplay = document.getElementById("currentTime");
+    const durationDisplay = document.getElementById("duration");
+    const playerContainer = document.getElementById("playerContainer");
 
     let selectedFile = null;
-    let coverArtContainer = null; 
+    let coverArtContainer = null;
 
-    fileInput.addEventListener('change', function(event) {
+    fileInput.addEventListener("change", function(event) {
       const file = event.target.files[0];
       if (file) {
         selectedFile = file;
@@ -320,24 +425,20 @@
 
         extractCoverArt(file, function(imageUrl) {
           if (imageUrl) {
-            coverArtContainer = document.createElement('div');
-            coverArtContainer.className = 'cover-art-container';
-            const img = document.createElement('img');
+            coverArtContainer = document.createElement("div");
+            coverArtContainer.className = "cover-art-container";
+            const img = document.createElement("img");
             img.src = imageUrl;
             img.alt = "Cover Art";
             coverArtContainer.appendChild(img);
-        
             playerContainer.insertBefore(coverArtContainer, playerContainer.firstChild);
           } else {
-          
-            const existing = document.querySelector('.cover-art-container');
-            if (existing) {
-              existing.remove();
-            }
+            const existing = document.querySelector(".cover-art-container");
+            if (existing) existing.remove();
           }
         });
 
-        if (typeof Android !== 'undefined' && Android.onFileSelected) {
+        if (typeof Android !== "undefined" && Android.onFileSelected) {
           Android.onFileSelected(fileURL);
         }
       }
@@ -346,8 +447,7 @@
     function setRandomWaveAnimation() {
       const animations = ["wave-animation-1", "wave-animation-2", "wave-animation-3"];
       const randomAnim = animations[Math.floor(Math.random() * animations.length)];
-      const waves = document.querySelectorAll('.wave-container .wave');
-      waves.forEach(wave => {
+      document.querySelectorAll(".wave-container .wave").forEach(wave => {
         wave.style.animation = `${randomAnim} 1s infinite ease-in-out`;
       });
     }
@@ -355,163 +455,158 @@
     function setRandomBackgroundAnimation() {
       const classes = ["bg-animation-1", "bg-animation-2", "bg-animation-3", "bg-animation-4", "bg-animation-5"];
       classes.forEach(cls => document.body.classList.remove(cls));
-      const randomClass = classes[Math.floor(Math.random() * classes.length)];
-      document.body.classList.add(randomClass);
+      document.body.classList.add(classes[Math.floor(Math.random() * classes.length)]);
     }
 
-    playBtn.addEventListener('click', function() {
+    playBtn.addEventListener("click", function() {
       if (selectedFile) {
         audioPlayer.play();
         setRandomWaveAnimation();
-        waveAnimation.classList.remove('hidden');
-        playBtn.textContent = '⏸ Pause';
+        waveAnimation.classList.remove("hidden");
+        playBtn.textContent = "⏸ Pause";
         setRandomBackgroundAnimation();
-        if (typeof Android !== 'undefined' && Android.playAudio) {
+        if (typeof Android !== "undefined" && Android.playAudio) {
           Android.playAudio(audioPlayer.src);
         }
-        updateNotification('PLAY');
+        updateNotification("PLAY");
       } else {
-        alert("Please select an MP3 file first.");
+        alert("まずオーディオファイルを選択してください。");
       }
     });
 
-    pauseBtn.addEventListener('click', function() {
+    pauseBtn.addEventListener("click", function() {
       audioPlayer.pause();
-      waveAnimation.classList.add('hidden');
-      playBtn.textContent = '▶ Play';
+      waveAnimation.classList.add("hidden");
+      playBtn.textContent = "▶ Play";
       removeBackgroundAnimation();
-      if (typeof Android !== 'undefined' && Android.pauseAudio) {
+      if (typeof Android !== "undefined" && Android.pauseAudio) {
         Android.pauseAudio();
       }
-      updateNotification('PAUSE');
+      updateNotification("PAUSE");
     });
 
-    stopBtn.addEventListener('click', function() {
+    stopBtn.addEventListener("click", function() {
       audioPlayer.pause();
       audioPlayer.currentTime = 0;
-      waveAnimation.classList.add('hidden');
-      playBtn.textContent = '▶ Play';
+      waveAnimation.classList.add("hidden");
+      playBtn.textContent = "▶ Play";
       removeBackgroundAnimation();
-      if (typeof Android !== 'undefined' && Android.stopAudio) {
+      if (typeof Android !== "undefined" && Android.stopAudio) {
         Android.stopAudio();
       }
-      updateNotification('STOP');
+      updateNotification("STOP");
     });
 
-    repeatBtn.addEventListener('click', function() {
+    repeatBtn.addEventListener("click", function() {
       audioPlayer.loop = !audioPlayer.loop;
-      repeatBtn.textContent = audioPlayer.loop ? '🔁 Repeat On' : '🔁 Repeat Off';
-      if (typeof Android !== 'undefined' && Android.toggleRepeat) {
+      repeatBtn.textContent = audioPlayer.loop ? "🔁 Repeat On" : "🔁 Repeat Off";
+      if (typeof Android !== "undefined" && Android.toggleRepeat) {
         Android.toggleRepeat(audioPlayer.loop);
       }
     });
 
-    audioPlayer.addEventListener('ended', function() {
-      waveAnimation.classList.add('hidden');
-      playBtn.textContent = '▶ Play';
+    audioPlayer.addEventListener("ended", function() {
+      waveAnimation.classList.add("hidden");
+      playBtn.textContent = "▶ Play";
       removeBackgroundAnimation();
-      updateNotification('STOP');
-      if (typeof Android !== 'undefined' && Android.stopAudio) {
+      updateNotification("STOP");
+      if (typeof Android !== "undefined" && Android.stopAudio) {
         Android.stopAudio();
       }
     });
 
-    audioPlayer.addEventListener('timeupdate', function() {
+    audioPlayer.addEventListener("timeupdate", function() {
       if (audioPlayer.duration) {
-        const value = (audioPlayer.currentTime / audioPlayer.duration) * 100;
-        seekBar.value = value;
+        seekBar.value = (audioPlayer.currentTime / audioPlayer.duration) * 100;
       }
       updateTimeDisplay();
-      if (typeof Android !== 'undefined' && Android.updatePlaybackInfo) {
-        Android.updatePlaybackInfo(audioPlayer.currentTime, audioPlayer.duration, audioPlayer.paused ? 'PAUSE' : 'PLAY');
+      if (typeof Android !== "undefined" && Android.updatePlaybackInfo) {
+        Android.updatePlaybackInfo(audioPlayer.currentTime, audioPlayer.duration, audioPlayer.paused ? "PAUSE" : "PLAY");
       }
     });
 
-    seekBar.addEventListener('input', function() {
+    seekBar.addEventListener("input", function() {
       if (audioPlayer.duration) {
         const newTime = (seekBar.value / 100) * audioPlayer.duration;
         audioPlayer.currentTime = newTime;
-        if (typeof Android !== 'undefined' && Android.seekTo) {
+        if (typeof Android !== "undefined" && Android.seekTo) {
           Android.seekTo(newTime);
         }
       }
     });
 
     function updateTimeDisplay() {
-      const currentTime = formatTime(audioPlayer.currentTime);
-      const duration = formatTime(audioPlayer.duration);
-      currentTimeDisplay.textContent = currentTime;
-      durationDisplay.textContent = duration;
-    }
-
-    function formatTime(seconds) {
-      const minutes = Math.floor(seconds / 60);
-      const secs = Math.floor(seconds % 60);
-      return `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      const minutes = Math.floor(audioPlayer.currentTime / 60);
+      const seconds = Math.floor(audioPlayer.currentTime % 60);
+      currentTimeDisplay.textContent = `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+      const durMin = Math.floor(audioPlayer.duration / 60) || 0;
+      const durSec = Math.floor(audioPlayer.duration % 60) || 0;
+      durationDisplay.textContent = `${durMin.toString().padStart(2, "0")}:${durSec.toString().padStart(2, "0")}`;
     }
 
     function updateDurationDisplay() {
       if (audioPlayer.duration) {
-        const duration = formatTime(audioPlayer.duration);
-        durationDisplay.textContent = duration;
-        if (typeof Android !== 'undefined' && Android.setDuration) {
+        const durMin = Math.floor(audioPlayer.duration / 60);
+        const durSec = Math.floor(audioPlayer.duration % 60);
+        durationDisplay.textContent = `${durMin.toString().padStart(2, "0")}:${durSec.toString().padStart(2, "0")}`;
+        if (typeof Android !== "undefined" && Android.setDuration) {
           Android.setDuration(audioPlayer.duration);
         }
       }
     }
 
     function updateNotification(state) {
-      if (typeof Android === 'undefined') return;
+      if (typeof Android === "undefined") return;
       switch (state) {
-        case 'PLAY':
+        case "PLAY":
           if (Android.playOrPause) Android.playOrPause();
           break;
-        case 'PAUSE':
+        case "PAUSE":
           if (Android.playOrPause) Android.playOrPause();
           break;
-        case 'STOP':
+        case "STOP":
           if (Android.stop) Android.stop();
           break;
       }
     }
 
     function removeBackgroundAnimation() {
-      const classes = ["bg-animation-1", "bg-animation-2", "bg-animation-3", "bg-animation-4", "bg-animation-5"];
-      classes.forEach(cls => document.body.classList.remove(cls));
+      ["bg-animation-1", "bg-animation-2", "bg-animation-3", "bg-animation-4", "bg-animation-5"]
+        .forEach(cls => document.body.classList.remove(cls));
       document.body.style.background = "linear-gradient(135deg, #121212, #1e1e1e)";
     }
 
     function checkPlaybackState() {
       if (audioPlayer.paused) {
-        updateNotification('PAUSE');
+        updateNotification("PAUSE");
       } else if (audioPlayer.ended) {
-        updateNotification('STOP');
+        updateNotification("STOP");
       } else {
-        updateNotification('PLAY');
+        updateNotification("PLAY");
       }
     }
     setInterval(checkPlaybackState, 1000);
 
     function updateUIFromJava(state) {
       switch (state) {
-        case 'PLAY':
+        case "PLAY":
           audioPlayer.play();
           setRandomWaveAnimation();
-          waveAnimation.classList.remove('hidden');
-          playBtn.textContent = '⏸ Pause';
+          waveAnimation.classList.remove("hidden");
+          playBtn.textContent = "⏸ Pause";
           setRandomBackgroundAnimation();
           break;
-        case 'PAUSE':
+        case "PAUSE":
           audioPlayer.pause();
-          waveAnimation.classList.add('hidden');
-          playBtn.textContent = '▶ Play';
+          waveAnimation.classList.add("hidden");
+          playBtn.textContent = "▶ Play";
           removeBackgroundAnimation();
           break;
-        case 'STOP':
+        case "STOP":
           audioPlayer.pause();
           audioPlayer.currentTime = 0;
-          waveAnimation.classList.add('hidden');
-          playBtn.textContent = '▶ Play';
+          waveAnimation.classList.add("hidden");
+          playBtn.textContent = "▶ Play";
           removeBackgroundAnimation();
           break;
       }
