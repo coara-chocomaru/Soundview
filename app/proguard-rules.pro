@@ -18,7 +18,6 @@
 # Keep necessary androidx and support library classes
 -keep class android.support.v4.media.session.** { *; }
 -keep class androidx.media.session.** { *; }
-
 # Keep annotations
 -keepattributes *Annotation*
 
